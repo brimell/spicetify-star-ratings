@@ -1,5 +1,5 @@
 {
-  "name": "Star Ratings",
+  "name": "Star Ratings (Rate your music)",
   "description": "Rate your music out of 5 stars (interactive)!",
   "preview": "imgs/preview.png",
   "main": "dist/star-ratings.js",
