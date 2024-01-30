@@ -1,0 +1,15 @@
+README.md
+dist
+install.png
+preview.png
+manifest.json
+node_modules
+package-lock.json
+package.json
+screenshot.png
+settings.png
+src/settings-ui.css
+src/settings.json
+src/types
+tsconfig.json
+.prettierrc.json

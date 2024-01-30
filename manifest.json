@@ -1,0 +1,11 @@
+{
+  "name": "Star Ratings",
+  "description": "Add star ratings to Spotify",
+  "preview": "imgs/preview.png",
+  "main": "dist/star-ratings.js",
+  "readme": "README.md",
+  "authors": [
+      { "name": "Bill Rimell", "url": "https://github.com/brimell" }
+  ],
+  "tags": ["star", "rating", "interactive"]
+}

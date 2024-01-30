@@ -1,0 +1,46 @@
+.parent-div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.button-div {
+    margin-top: 24px;
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+}
+
+.cancel-button {
+    background-color: transparent;
+    font-weight: 700;
+    border: 0;
+    color: var(--spice-text);
+    display: inline-flex;
+    border-radius: 500px;
+    font-size: inherit;
+    min-block-size: 48px;
+    align-items: center;
+    padding-inline: 32px;
+}
+
+.cancel-button:hover {
+    transform: scale(1.04);
+}
+
+.ok-button {
+    background-color: var(--spice-button-active);
+    font-weight: 700;
+    border: 0;
+    color: var(--spice-main);
+    display: inline-flex;
+    border-radius: 500px;
+    font-size: inherit;
+    min-block-size: 48px;
+    align-items: center;
+    padding-inline: 32px;
+}
+
+.ok-button:hover {
+    transform: scale(1.04);
+}
