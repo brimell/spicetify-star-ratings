@@ -24,18 +24,26 @@ Settings, such as enabling/disabling half star ratings, can be accessed from the
 
 ## Star Rating Playlist Images
 
-<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
-    <img src="imgs/0.5star.jpg" alt="0.5 Star Rating" style="width: 100%; height: auto;">
-    <img src="imgs/1star.jpg" alt="1 Star Rating" style="width: 100%; height: auto;">
-    <img src="imgs/1.5star.jpg" alt="1.5 Star Rating" style="width: 100%; height: auto;">
-    <img src="imgs/2star.jpg" alt="2 Star Rating" style="width: 100%; height: auto;">
-    <img src="imgs/2.5star.jpg" alt="2.5 Star Rating" style="width: 100%; height: auto;">
-    <img src="imgs/3star.jpg" alt="3 Star Rating" style="width: 100%; height: auto;">
-    <img src="imgs/3.5star.jpg" alt="3.5 Star Rating" style="width: 100%; height: auto;">
-    <img src="imgs/4star.jpg" alt="4 Star Rating" style="width: 100%; height: auto;">
-    <img src="imgs/4.5star.jpg" alt="4.5 Star Rating" style="width: 100%; height: auto;">
-    <img src="imgs/5star.jpg" alt="5 Star Rating" style="width: 100%; height: auto;">
-  </div>
+<table>
+    <tr>
+      <td><img src="imgs/0.5star.jpg" width="100px" alt="0.5 Star Rating"></td>
+      <td><img src="imgs/1star.jpg" width="100px" alt="1 Star Rating"></td>
+      <td><img src="imgs/1.5star.jpg" width="100px" alt="1.5 Star Rating"></td>
+    </tr>
+    <tr>
+      <td><img src="imgs/2star.jpg" width="100px" alt="2 Star Rating"></td>
+      <td><img src="imgs/2.5star.jpg" width="100px" alt="2.5 Star Rating"></td>
+      <td><img src="imgs/3star.jpg" width="100px" alt="3 Star Rating"></td>
+    </tr>
+    <tr>
+      <td><img src="imgs/3.5star.jpg" width="100px" alt="3.5 Star Rating"></td>
+      <td><img src="imgs/4star.jpg" width="100px" alt="4 Star Rating"></td>
+      <td><img src="imgs/4.5star.jpg" width="100px" alt="4.5 Star Rating"></td>
+    </tr>
+    <tr>
+      <td colspan="3"><img src="imgs/5star.jpg" width="100px" alt="5 Star Rating"></td>
+    </tr>
+  </table>
 
 <br>
 
