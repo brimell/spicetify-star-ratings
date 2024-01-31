@@ -37,4 +37,7 @@ Settings, such as enabling/disabling half star ratings, can be accessed from the
 
 <br>
 
+## Credits
+
+*Forked from https://github.com/duffey/spicetify-star-ratings (archived)*
 *This extension was built with [Spicetify Creator](https://github.com/spicetify/spicetify-creator)*
