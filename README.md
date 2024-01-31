@@ -14,6 +14,14 @@ Add star ratings to Spotify
 Settings, such as enabling/disabling half star ratings, can be accessed from the menu at the top right
 ![Settings](imgs/settings.png)
 
+## Implement List
+
+* [] option to play only unrated songs
+* [] option to play songs weighted by ratings
+* [] option to play songs with a minimum rating
+* [] option to show rateyourmusic ratings
+* [] option to upload ratings to rateyourmusic
+
 ## Star Rating Playlist Images
 
 <img src="imgs/0.5star.jpg" width="100px" alt="0.5 Star Rating">
