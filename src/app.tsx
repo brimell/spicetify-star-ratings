@@ -78,11 +78,8 @@ const getNowPlayingTrackUri = () => {
     return Spicetify.Player.data.item.uri;
 };
 
-function updateAlbumRating(_album) {
-    // if (!albumId || !album) return;
-    console.log(albumId, album)
-    
-    const averageRating = getAlbumRating(ratings, _album);
+function updateAlbumRating() {
+    const averageRating = getAlbumRating(ratings, album);
     
 
     setRating(albumStarData[1], averageRating.toString());
@@ -384,16 +381,15 @@ async function observerCallback(keys) {
 }
 
 async function updateAlbumStars() {
-    if (!albumStarData) return;
+    if (!albumStarData) return
 
     albumId = isAlbumPage();
     albumStarData[0].style.display = albumId ? "flex" : "none";
-    console.log('test', albumId)
+
     if (!albumId) return;
-    api.getAlbum(`spotify:album:${albumId}`).then((res) => {
-        updateAlbumRating(res)
-        console.log('res:', res)
-    })
+    
+    album = await api.getAlbum(`spotify:album:${albumId}`);
+    updateAlbumRating();
 }
 
 function updateNowPlayingWidget() {

@@ -38,9 +38,8 @@ export async function createFolder(name) {
 
 export async function getAlbum(uri) {
     const { queryAlbumTracks } = Spicetify.GraphQL.Definitions;
-    const data = await Spicetify.GraphQL.Request(queryAlbumTracks, { uri, offset: 0, limit: 500 });
-    console.log('data', data)
-    return data;
+    const res = await Spicetify.GraphQL.Request(queryAlbumTracks, { uri, offset: 0, limit: 450 });
+    return res.data;
 }
 
 export async function getContents() {
