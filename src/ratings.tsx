@@ -91,7 +91,7 @@ export async function deleteLowestRatings(playlistUris, ratings) {
 }
 
 export function getAlbumRating(ratings, album) {
-    console.log("ablum is:", album);
+    console.log("album is:", album);
 
     const items = album.albumUnion.tracks.items;
     let sumRatings = 0.0;
