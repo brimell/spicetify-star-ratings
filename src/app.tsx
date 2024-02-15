@@ -375,8 +375,9 @@ async function observerCallback(keys) {
     }
 
     oldAlbumPlayButton = albumPlayButton;
+
+    // get album play button in order to add stars to the right of it
     albumPlayButton = document.querySelector(".main-actionBar-ActionBar .ix_8kg3iUb9VS5SmTnBY");
-    console.log(albumPlayButton, oldAlbumPlayButton)
     if (albumPlayButton && !albumPlayButton.isEqualNode(oldAlbumPlayButton)) {
         albumStarData = createStars("album", 32);
         albumPlayButton.after(albumStarData[0]);
