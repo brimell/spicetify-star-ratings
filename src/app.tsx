@@ -35,8 +35,8 @@ let oldTracklists = [];
 let oldNowPlayingWidget = null;
 let nowPlayingWidget = null;
 
-let oldAlbumPlayButton = null;
-let albumPlayButton = null;
+let oldPlayButton = null;
+let playButton = null;
 
 let albumId = null;
 let album = null;
@@ -374,13 +374,14 @@ async function observerCallback(keys) {
         }
     }
 
-    oldAlbumPlayButton = albumPlayButton;
+    oldPlayButton = playButton;
 
     // get album play button in order to add stars to the right of it
-    albumPlayButton = document.querySelector(".main-actionBar-ActionBar .ix_8kg3iUb9VS5SmTnBY");
-    if (albumPlayButton && !albumPlayButton.isEqualNode(oldAlbumPlayButton)) {
+    playButton = document.querySelector(".main-actionBar-ActionBar .ix_8kg3iUb9VS5SmTnBY");
+    if (playButton && !playButton.isEqualNode(oldPlayButton) && isAlbumPage() !== null) {
+        console.log(playButton, oldPlayButton, playButton && !playButton.isEqualNode(oldPlayButton));
         albumStarData = createStars("album", 32);
-        albumPlayButton.after(albumStarData[0]);
+        playButton.after(albumStarData[0]);
         await updateAlbumStars();
     }
 }
