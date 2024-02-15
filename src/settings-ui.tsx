@@ -89,13 +89,6 @@ export function Settings({
     restoreTracklist,
     redrawNowPlayingStars,
 }) {
-    function handleHideHeartsCheckboxClick(hideHearts) {
-        const nowPlayingWidgetHeart = document.querySelector(".control-button-heart");
-        if (nowPlayingWidgetHeart) nowPlayingWidgetHeart.style.display = settings.hideHearts ? "none" : "flex";
-        const hearts = document.querySelectorAll(".main-trackList-rowHeartButton");
-        for (const heart of hearts) heart.style.display = settings.hideHearts ? "none" : "flex";
-    }
-
     function handleEnableKeyboardShortcutsCheckboxClick() {
         if (settings.enableKeyboardShortcuts) registerKeyboardShortcuts();
         else deregisterKeyboardShortcuts();
@@ -114,7 +107,6 @@ export function Settings({
         <div>
             <Heading value="Settings" />
             <CheckboxItem settings={settings} name="Half star ratings" field="halfStarRatings" />
-            <CheckboxItem settings={settings} name="Hide hearts" field="hideHearts" onclick={handleHideHeartsCheckboxClick} />
             <CheckboxItem
                 settings={settings}
                 name="Enable keyboard shortcuts"

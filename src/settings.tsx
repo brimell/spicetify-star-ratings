@@ -4,7 +4,6 @@ export function getSettings() {
     const defaultSettings = {
         halfStarRatings: true,
         likeThreshold: "4.0",
-        hideHearts: false,
         enableKeyboardShortcuts: true,
         showPlaylistStars: true,
         nowPlayingStarsPosition: "left",

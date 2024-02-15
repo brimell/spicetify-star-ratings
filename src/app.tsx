@@ -311,7 +311,6 @@ function updateTracklist() {
             const currentRating = ratings[trackUri] ?? 0.0;
             ratingColumn.appendChild(stars);
             setRating(starElements, currentRating);
-            getHeart().style.display = settings.hideHearts ? "none" : "flex";
             addStarsListeners(
                 starData,
                 () => {
@@ -352,8 +351,6 @@ async function observerCallback(keys) {
             subtree: true,
         });
     }
-
-    if (getNowPlayingHeart()) getNowPlayingHeart().style.display = settings.hideHearts ? "none" : "flex";
 
     oldNowPlayingWidget = nowPlayingWidget;
     let selector =
