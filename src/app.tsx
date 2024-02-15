@@ -80,7 +80,6 @@ const getNowPlayingTrackUri = () => {
 
 function updateAlbumRating() {
     const averageRating = getAlbumRating(ratings, album);
-    
 
     setRating(albumStarData[1], averageRating.toString());
 }
@@ -174,7 +173,7 @@ function getRegisterKeyboardShortcuts(keys) {
                     ctrl: true,
                     alt: true,
                 },
-                getClickListener(0, parseFloat(rating), nowPlayingWidgetStarData, getNowPlayingTrackUri, getNowPlayingHeart)
+                getClickListener(0, parseFloat(rating), nowPlayingWidgetStarData, getNowPlayingTrackUri, getNowPlayingHeart),
             );
         }
     };
@@ -275,7 +274,12 @@ function updateTracklist() {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
         for (const track of tracks) {
             const getHeart = () => {
-                return track.getElementsByClassName("main-addButton-button")[0] ?? track.querySelector(".main-trackList-rowHeartButton") ?? track.querySelector("button[class*='buttonTertiary-iconOnly']") ?? track.querySelector("button[aria-label='Add to playlist']");
+                return (
+                    track.getElementsByClassName("main-addButton-button")[0] ??
+                    track.querySelector(".main-trackList-rowHeartButton") ??
+                    track.querySelector("button[class*='buttonTertiary-iconOnly']") ??
+                    track.querySelector("button[aria-label='Add to playlist']")
+                );
             };
             const heart = getHeart();
             const hasStars = track.getElementsByClassName("stars").length > 0;
@@ -315,7 +319,7 @@ function updateTracklist() {
                 () => {
                     return trackUri;
                 },
-                getHeart
+                getHeart,
             );
 
             // Add listeners for hovering over a track in the tracklist
@@ -371,23 +375,24 @@ async function observerCallback(keys) {
     }
 
     oldAlbumPlayButton = albumPlayButton;
-    albumPlayButton = document.querySelector(".main-actionBar-ActionBar .main-playButton-PlayButton");
+    albumPlayButton = document.querySelector(".main-actionBar-ActionBar .ix_8kg3iUb9VS5SmTnBY");
+    console.log(albumPlayButton, oldAlbumPlayButton)
     if (albumPlayButton && !albumPlayButton.isEqualNode(oldAlbumPlayButton)) {
         albumStarData = createStars("album", 32);
         albumPlayButton.after(albumStarData[0]);
         await updateAlbumStars();
-        updateAlbumRating();
     }
 }
 
 async function updateAlbumStars() {
-    if (!albumStarData) return
+    console.log("updateAlbumStars", albumStarData);
+    if (!albumStarData) return;
 
     albumId = isAlbumPage();
     albumStarData[0].style.display = albumId ? "flex" : "none";
 
     if (!albumId) return;
-    
+
     album = await api.getAlbum(`spotify:album:${albumId}`);
     updateAlbumRating();
 }
@@ -538,7 +543,7 @@ async function main() {
                 ratingsLoading = false;
             });
         },
-        shouldAddContextMenuOnFolders
+        shouldAddContextMenuOnFolders,
     ).register();
 
     new Spicetify.ContextMenu.Item(
@@ -561,7 +566,7 @@ async function main() {
                 }),
             });
         },
-        shouldAddContextMenuOnPlaylists
+        shouldAddContextMenuOnPlaylists,
     ).register();
 
     const observer = new MutationObserver(async () => {
