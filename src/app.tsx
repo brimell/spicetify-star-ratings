@@ -386,7 +386,6 @@ async function observerCallback(keys) {
 }
 
 async function updateAlbumStars() {
-    console.log("updateAlbumStars", albumStarData);
     if (!albumStarData) return;
 
     albumId = isAlbumPage();
