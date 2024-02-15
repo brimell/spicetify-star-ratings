@@ -46,31 +46,38 @@ export async function getContents() {
     return await Spicetify.Platform.RootlistAPI.getContents();
 }
 
-function playlistUriToPlaylistId(uri) {
-    return uri.match(/spotify:playlist:(.*)/)[1];
+function playlistUriToPlaylistId(uri: string) {
+    return uri.replace("spotify:playlist:", "");
 }
 
-export async function addTrackToPlaylist(playlistUri, trackUri) {
+export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
     const playlistId = playlistUriToPlaylistId(playlistUri);
+
     try {
+        console.log(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, trackUri)
         await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
             uris: [trackUri],
-        });
+        })
     } catch (error) {
         await new Promise((resolve) => setTimeout(resolve, 500));
         await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
             uris: [trackUri],
         });
     }
+    console.log("Added track to playlist");
 }
 
-export async function addTrackToLikedSongs(trackUri) {
-    await Spicetify.CosmosAsync.put("https://api.spotify.com/v1/me/tracks", {
-        ids: [trackUri],
-    });
+export async function addTrackToLikedSongs(trackUri: string) {
+    try {
+        await Spicetify.CosmosAsync.put("https://api.spotify.com/v1/me/tracks", {
+            ids: [trackUri],
+        });
+    } catch (error) {
+        console.error("Error adding track to liked songs (track probably already in liked songs", error);
+    }
 }
 
-export async function deleteTrackFromPlaylist(playlistUri, trackUri) {
+export async function deleteTrackFromPlaylist(playlistUri: string, trackUri: string) {
     const playlistId = playlistUriToPlaylistId(playlistUri);
     await Spicetify.CosmosAsync.del(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
         tracks: [
@@ -81,7 +88,7 @@ export async function deleteTrackFromPlaylist(playlistUri, trackUri) {
     });
 }
 
-export async function getPlaylistItems(uri) {
+export async function getPlaylistItems(uri: string) {
     const result = await Spicetify.CosmosAsync.get(`sp://core-playlist/v1/playlist/${uri}`);
     return result.items;
 }
@@ -98,7 +105,7 @@ export async function moveTracksBefore(playlistUri, trackUids, beforeUid) {
     await Spicetify.Platform.PlaylistAPI.move(
         playlistUri,
         trackUids.map((uid) => ({ uid: uid })),
-        { before: isV2 ? { uid: beforeUid } : beforeUid }
+        { before: isV2 ? { uid: beforeUid } : beforeUid },
     );
 }
 
@@ -107,6 +114,6 @@ export async function moveTracksAfter(playlistUri, trackUids, afterUid) {
     await Spicetify.Platform.PlaylistAPI.move(
         playlistUri,
         trackUids.map((uid) => ({ uid: uid })),
-        { after: isV2 ? { uid: afterUid } : afterUid }
+        { after: isV2 ? { uid: afterUid } : afterUid },
     );
 }

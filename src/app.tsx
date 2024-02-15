@@ -93,14 +93,19 @@ async function handleRemoveRating(trackUri, rating) {
     api.showNotification(`Removed from ${playlistName}`);
 }
 
-async function handleSetRating(trackUri, oldRating, newRating) {
+async function handleSetRating(trackUri: string, oldRating: number | undefined, newRating: number) {
+    // Update the rating in the ratings object
     ratings[trackUri] = newRating;
+
+    // If there was a previous rating, remove the track from the old playlist
     if (oldRating) {
         const oldRatingAsString = oldRating.toFixed(1);
         const playlistUri = playlistUris[oldRatingAsString];
         const playlistName = playlistNames[playlistUri];
         await api.deleteTrackFromPlaylist(playlistUri, trackUri);
     }
+
+    // Create a 'Rated' folder if it doesn't exist
     if (!ratedFolderUri) {
         await api.createFolder("Rated");
         const contents = await api.getContents();
@@ -108,8 +113,12 @@ async function handleSetRating(trackUri, oldRating, newRating) {
         ratedFolderUri = ratedFolder.uri;
         saveRatedFolderUri(ratedFolderUri);
     }
+
+    // Convert the new rating to string format with one decimal place
     const newRatingAsString = newRating.toFixed(1);
     let playlistUri = playlistUris[newRatingAsString];
+
+    // If the Rated playlist for the new rating doesn't exist, create it
     if (!playlistUri) {
         playlistUri = await api.createPlaylist(newRatingAsString, ratedFolderUri);
         await api.makePlaylistPrivate(playlistUri);
@@ -117,7 +126,11 @@ async function handleSetRating(trackUri, oldRating, newRating) {
         savePlaylistUris(playlistUris);
         playlistNames[playlistUri] = newRatingAsString;
     }
+
+    // Add the track to the playlist for the new rating
     await api.addTrackToPlaylist(playlistUri, trackUri);
+
+    // Get the name of the playlist and show a notification indicating the action
     const playlistName = playlistNames[playlistUri];
     api.showNotification((oldRating ? "Moved" : "Added") + ` to ${playlistName}`);
 }
