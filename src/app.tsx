@@ -145,10 +145,6 @@ function getClickListener(i, ratingOverride, starData, getTrackUri, getHeart) {
         const oldRating = ratings[trackUri];
         let newRating = ratingOverride !== null ? ratingOverride : getMouseoverRating(settings, star, i);
 
-        if (settings.likeThreshold !== "disabled") {
-            if (newRating >= parseFloat(settings.likeThreshold)) api.addTrackToLikedSongs(trackUri);
-        }
-
         let promise = null;
         let displayRating = null;
 
@@ -158,6 +154,11 @@ function getClickListener(i, ratingOverride, starData, getTrackUri, getHeart) {
         } else {
             displayRating = newRating;
             promise = handleSetRating(trackUri, oldRating, newRating);
+
+            // Like the track if it's rated above the like threshold
+            if (settings.likeThreshold !== "disabled") {
+                if (newRating >= parseFloat(settings.likeThreshold)) api.addTrackToLikedSongs(trackUri);
+            }
         }
 
         promise.finally(() => {

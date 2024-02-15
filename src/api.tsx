@@ -52,12 +52,11 @@ function playlistUriToPlaylistId(uri: string) {
 
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
     const playlistId = playlistUriToPlaylistId(playlistUri);
-
     try {
-        console.log(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, trackUri)
+        console.log(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, trackUri);
         await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
             uris: [trackUri],
-        })
+        });
     } catch (error) {
         await new Promise((resolve) => setTimeout(resolve, 500));
         await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
@@ -68,13 +67,9 @@ export async function addTrackToPlaylist(playlistUri: string, trackUri: string) 
 }
 
 export async function addTrackToLikedSongs(trackUri: string) {
-    try {
-        await Spicetify.CosmosAsync.put("https://api.spotify.com/v1/me/tracks", {
-            ids: [trackUri],
-        });
-    } catch (error) {
-        console.error("Error adding track to liked songs (track probably already in liked songs", error);
-    }
+    await Spicetify.CosmosAsync.put("https://api.spotify.com/v1/me/tracks", {
+        ids: [trackUri],
+    });
 }
 
 export async function deleteTrackFromPlaylist(playlistUri: string, trackUri: string) {
