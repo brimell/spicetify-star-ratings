@@ -132,10 +132,8 @@ function getClickListener(i, ratingOverride, starData, getTrackUri, getHeart) {
         const oldRating = ratings[trackUri];
         let newRating = ratingOverride !== null ? ratingOverride : getMouseoverRating(settings, star, i);
 
-        const heart = getHeart();
-        if (heart && settings.likeThreshold !== "disabled") {
-            if (heart.ariaChecked !== "true" && newRating >= parseFloat(settings.likeThreshold)) heart.click();
-            if (heart.ariaChecked === "true" && newRating < parseFloat(settings.likeThreshold)) heart.click();
+        if (settings.likeThreshold !== "disabled") {
+            if (newRating >= parseFloat(settings.likeThreshold)) api.addTrackToLikedSongs(trackUri);
         }
 
         let promise = null;
@@ -501,7 +499,7 @@ async function main() {
         observerCallback(keys);
     };
 
-    new Spicetify.Menu.Item("Star Ratings", false, () => {
+    new Spicetify.Menu.Item("Star Ratings", true, () => {
         Spicetify.PopupModal.display({
             title: "Star Ratings",
             content: Settings({

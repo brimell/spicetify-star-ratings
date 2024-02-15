@@ -64,6 +64,12 @@ export async function addTrackToPlaylist(playlistUri, trackUri) {
     }
 }
 
+export async function addTrackToLikedSongs(trackUri) {
+    await Spicetify.CosmosAsync.put("https://api.spotify.com/v1/me/tracks", {
+        ids: [trackUri],
+    });
+}
+
 export async function deleteTrackFromPlaylist(playlistUri, trackUri) {
     const playlistId = playlistUriToPlaylistId(playlistUri);
     await Spicetify.CosmosAsync.del(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
