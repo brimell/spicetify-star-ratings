@@ -52,13 +52,14 @@ export async function addTrackToPlaylist(playlistUri: string, trackUri: string) 
 
 export async function addTrackToLikedSongs(trackUri: string) {
     const trackId = trackUri.replace("spotify:track:", "");
-    // console.log('this',await Spicetify.Platform.LibraryAPI.getTracks())
+    // console.log('this',await Spicetify.Platform.LibraryAPI.add())
     await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`);
 }
 
 export async function removeTrackFromPlaylist(playlistUri: string, trackUri: string) {
     console.log(Spicetify.Platform);
-    const res = await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [trackUri]);
+    const trackId = trackUri.replace("spotify:track:", "");
+    const res = await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [{uri: trackUri}]);
     console.log(res);
 }
 
