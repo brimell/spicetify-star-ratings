@@ -58,7 +58,6 @@ export async function addTrackToLikedSongs(trackUri: string) {
 
 export async function removeTrackFromPlaylist(playlistUri: string, trackUri: string) {
     console.log(Spicetify.Platform);
-    const trackId = trackUri.replace("spotify:track:", "");
     const res = await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [{uri: trackUri, uid: ""}]);
     console.log(res);
 }
