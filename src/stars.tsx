@@ -74,7 +74,7 @@ export function createStars(trackURI: string, size: number): [HTMLSpanElement, (
     return [stars, starElements];
 }
 
-export function setRating(starElements, rating) {
+export function setRating(starElements: (SVGSVGElement | SVGStopElement)[][], rating: number) {
     const halfStars = (rating /= 0.5);
     for (let i = 0; i < 5; i++) {
         const stopFirst = starElements[i][1];
