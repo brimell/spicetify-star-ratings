@@ -85,7 +85,7 @@ function updateAlbumRating() {
     setRating(albumStarData[1], averageRating.toString());
 }
 
-async function handleRemoveRating(trackUri, rating) {
+async function handleRemoveRating(trackUri: string, rating: number) {
     delete ratings[trackUri];
     const ratingAsString = rating.toFixed(1);
     const playlistUri = playlistUris[ratingAsString];
