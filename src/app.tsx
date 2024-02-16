@@ -388,7 +388,6 @@ async function observerCallback(keys) {
     // get album play button in order to add stars to the right of it
     playButton = document.querySelector(".main-actionBar-ActionBar .ix_8kg3iUb9VS5SmTnBY");
     if (playButton && !playButton.isEqualNode(oldPlayButton) && isAlbumPage() !== null) {
-        console.log(playButton, oldPlayButton, playButton && !playButton.isEqualNode(oldPlayButton));
         albumStarData = createStars("album", 32);
         playButton.after(albumStarData[0]);
         await updateAlbumStars();
@@ -459,10 +458,8 @@ async function loadRatings() {
 
     if (ratedFolder) {
         // Remove any playlist URIs associated with the rated folder
-        console.log('start', playlistUris, ratedFolder)
         let playlistUrisRemoved = false;
         [playlistUrisRemoved, playlistUris] = removePlaylistUris(playlistUris, ratedFolder);
-        console.log(playlistUrisRemoved, playlistUris)
 
         // Add any new playlist URIs associated with the rated folder
         let playlistUrisAdded = false;
