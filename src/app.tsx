@@ -17,6 +17,7 @@ import {
     sortPlaylistByRating,
 } from "./ratings";
 import { PlaylistUris, Ratings } from "./types/store";
+import { tracklistColumnCss } from "./css/css";
 
 let settings = null;
 
@@ -270,16 +271,11 @@ function updateTracklist() {
     }
 
     // Define CSS for different tracklist columns
-    const tracklistColumnCss = [
-        null,
-        null,
-        null,
-        null,
-        "[index] 16px [first] 4fr [var1] 2fr [var2] 1fr [last] minmax(120px,1fr)",
-        "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [var3] 2fr [last] minmax(120px,1fr)",
-        "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [var3] minmax(120px,2fr) [var3] 2fr [last] minmax(120px,1fr)",
-    ];
 
+    createStarsForTracklists(tracklists);
+}
+
+function createStarsForTracklists(tracklists) {
     // Store new tracklist header CSS
     let newTracklistHeaderCss = null;
     const tracklistHeaders = document.querySelectorAll(".main-trackList-trackListHeaderRow");
