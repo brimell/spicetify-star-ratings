@@ -16,14 +16,14 @@ import {
     getAlbumRating,
     sortPlaylistByRating,
 } from "./ratings";
-import { all } from "axios";
+import { PlaylistUris, Ratings } from "./types/store";
 
 let settings = null;
 
-let ratedFolderUri = null;
-let ratings = {};
+let ratedFolderUri: string | null = null;
+let ratings: Ratings = {};
 let playlistNames = {};
-let playlistUris = {};
+let playlistUris: PlaylistUris  = {};
 
 let originalTracklistHeaderCss = null;
 let originalTracklistTrackCss = null;
