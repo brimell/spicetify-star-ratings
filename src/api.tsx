@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 export function showNotification(text) {
     Spicetify.showNotification(text);
 }
@@ -50,25 +52,43 @@ function playlistUriToPlaylistId(uri: string) {
     return uri.replace("spotify:playlist:", "");
 }
 
+// export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
+//     const playlistId = playlistUriToPlaylistId(playlistUri);
+//     try {
+//         console.log(playlistId, trackUri);
+//         await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+//             uris: [trackUri],
+//         });
+//     } catch (error) {
+//         await new Promise((resolve) => setTimeout(resolve, 500));
+//         await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+//             uris: [trackUri],
+//         });
+//     }
+//     console.log("Added track to playlist");
+// }
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
     const playlistId = playlistUriToPlaylistId(playlistUri);
-    try {
-        console.log(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, trackUri);
-        await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            uris: [trackUri],
-        });
-    } catch (error) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            uris: [trackUri],
-        });
-    }
-    console.log("Added track to playlist");
+    const trackId = trackUri.replace('spotify:track:', '');
+    const token = Spicetify.Platform.Session.accessToken;
+    await axios.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?uris=spotify%3Atrack%3A${trackId}`, {}, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
 }
 
+// export async function addTrackToLikedSongs(trackId: string) {
+//     await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`);
+// }
+
 export async function addTrackToLikedSongs(trackUri: string) {
-    await Spicetify.CosmosAsync.put("https://api.spotify.com/v1/me/tracks", {
-        ids: [trackUri],
+    const trackId = trackUri.replace('spotify:track:', '');
+    const token = Spicetify.Platform.Session.accessToken;
+    await axios.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`, {}, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
     });
 }
 
