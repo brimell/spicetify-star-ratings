@@ -1,4 +1,4 @@
-export function findStars(idSuffix) {
+export function findStars(idSuffix: string) {
     const starsId = `stars-${idSuffix}`;
     const stars = document.getElementById(starsId);
     if (!stars) return null;
