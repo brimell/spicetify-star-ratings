@@ -52,6 +52,7 @@ export async function addTrackToPlaylist(playlistUri: string, trackUri: string) 
 
 export async function addTrackToLikedSongs(trackUri: string) {
     const trackId = trackUri.replace("spotify:track:", "");
+    // console.log('this',await Spicetify.Platform.LibraryAPI.getTracks())
     await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`);
 }
 
