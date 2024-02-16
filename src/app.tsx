@@ -169,7 +169,6 @@ function getClickListener(i, ratingOverride, starData, getTrackUri, getHeart) {
             }
 
             updateNowPlayingWidget();
-            updateAlbumRating();
 
             clickListenerRunning = false;
         });
