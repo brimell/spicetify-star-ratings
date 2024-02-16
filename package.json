@@ -1,7 +1,7 @@
 {
   "name": "star-ratings",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "scripts": {
     "build": "spicetify-creator",
     "build-local": "spicetify-creator --out=dist --minify",
