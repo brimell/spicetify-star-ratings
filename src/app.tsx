@@ -18,6 +18,7 @@ import {
 } from "./ratings";
 import { PlaylistUris, Ratings } from "./types/store";
 import { tracklistColumnCss } from "./css/css";
+import { getTracklistTrackUri, isAlbumPage, trackUriToTrackId } from "./utils/utils";
 
 let settings = null;
 
@@ -49,29 +50,6 @@ let clickListenerRunning = false;
 let ratingsLoading = false;
 let isSorting = false;
 
-function isAlbumPage() {
-    const pathname = Spicetify.Platform.History.location.pathname;
-    const matches = pathname.match(/album\/(.*)/);
-    if (!matches) return null;
-    return matches[1];
-}
-
-function trackUriToTrackId(trackUri: string): string {
-    return trackUri.replace("spotify:track:", "");
-}
-
-function getTracklistTrackUri(tracklistElement) {
-    let values = Object.values(tracklistElement);
-    if (!values) return null;
-    const searchFrom = values[0]?.pendingProps?.children[0]?.props?.children;
-    return (
-        searchFrom?.props?.uri ||
-        searchFrom?.props?.children?.props?.uri ||
-        searchFrom?.props?.children?.props?.children?.props?.uri ||
-        searchFrom[0]?.props?.uri
-    );
-}
-
 function getNowPlayingHeart() {
     return document.querySelector(".main-nowPlayingWidget-nowPlaying .control-button-heart");
 }
@@ -83,7 +61,7 @@ const getNowPlayingTrackUri = () => {
 function updateAlbumRating() {
     const averageRating = getAlbumRating(ratings, album);
 
-    setRating(albumStarData[1], averageRating.toString());
+    setRating(albumStarData[1], averageRating);
 }
 
 async function handleRemoveRating(trackUri: string, rating: number) {
@@ -236,7 +214,7 @@ function restoreTracklist() {
 
     for (const tracklist of Array.from(tracklists)) {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
-        for (const track of tracks) {
+        for (const track of Array.from(tracks)) {
             let ratingColumn = track.querySelector(".starRatings");
             if (!ratingColumn) continue;
             track.style["grid-template-columns"] = originalTracklistTrackCss;
