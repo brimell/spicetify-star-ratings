@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios from "axios";
 
 export function showNotification(text) {
     Spicetify.showNotification(text);
@@ -34,11 +34,11 @@ export async function makePlaylistPrivate(playlistUri) {
     }, 1000);
 }
 
-export async function createFolder(name) {
+export async function createFolder(name: string) {
     await Spicetify.Platform.RootlistAPI.createFolder(name, { before: "" });
 }
 
-export async function getAlbum(uri) {
+export async function getAlbum(uri: string) {
     const { queryAlbumTracks } = Spicetify.GraphQL.Definitions;
     const res = await Spicetify.GraphQL.Request(queryAlbumTracks, { uri, offset: 0, limit: 450 });
     return res.data;
@@ -48,7 +48,7 @@ export async function getContents() {
     return await Spicetify.Platform.RootlistAPI.getContents();
 }
 
-function playlistUriToPlaylistId(uri: string) {
+function playlistUriToPlaylistId(uri: string): string {
     return uri.replace("spotify:playlist:", "");
 }
 
@@ -80,7 +80,7 @@ export async function addTrackToPlaylist(playlistUri: string, trackUri: string) 
 // }
 
 export async function addTrackToLikedSongs(trackUri: string) {
-    const trackId = trackUri.replace('spotify:track:', '');
+    const trackId = trackUri.replace("spotify:track:", "");
     await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`);
 }
 
