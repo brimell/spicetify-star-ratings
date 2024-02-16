@@ -457,19 +457,25 @@ async function loadRatings() {
     }
 
     if (ratedFolder) {
+        // Remove any playlist URIs associated with the rated folder
         let playlistUrisRemoved = false;
         [playlistUrisRemoved, playlistUris] = removePlaylistUris(playlistUris, ratedFolder);
 
+        // Add any new playlist URIs associated with the rated folder
         let playlistUrisAdded = false;
         [playlistUrisAdded, playlistUris] = addPlaylistUris(playlistUris, ratedFolder);
 
+        // If any playlist URIs were added or removed, save the updated list
         if (playlistUrisAdded || playlistUrisRemoved) savePlaylistUris(playlistUris);
 
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatings(allPlaylistItems);
+
         await deleteLowestRatings(playlistUris, ratings);
+
         ratings = takeHighestRatings(ratings);
         playlistNames = getPlaylistNames(playlistUris, ratedFolder);
+        
     } else if (Object.keys(playlistUris).length > 0) {
         playlistUris = {};
         savePlaylistUris(playlistUris);

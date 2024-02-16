@@ -20,7 +20,7 @@ export function removePlaylistUris(playlistUris, ratedFolder) {
 }
 
 // Add playlist URIs of numbered rated playlists when they currently don't exist in settings
-export function addPlaylistUris(playlistUris, ratedFolder) {
+export function addPlaylistUris(playlistUris: [string], ratedFolder) {
     const newPlaylistUris = { ...playlistUris };
     let changed = false;
     const ratings = ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0"];
@@ -92,7 +92,7 @@ export async function deleteLowestRatings(playlistUris, ratings) {
 
 export function getAlbumRating(ratings, album) {
     console.log("album is:", album);
-    if (!album.albumUnion) return 0
+    if (!album.albumUnion) return 0;
 
     const items = album.albumUnion.tracks.items;
     let sumRatings = 0.0;
