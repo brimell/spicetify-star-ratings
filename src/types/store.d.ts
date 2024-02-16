@@ -3,7 +3,7 @@ export type RatingsByTrack = {
 };
 
 export type TracksByRatings = {
-    [key: number]: Array<Track>;
+    [key: number]: [Track];
 };
 
 export type Track = {
@@ -67,3 +67,13 @@ export type Track = {
         xlarge: string;
     };
 };
+
+export interface PlaylistUris {
+    [key: string]: string;
+}
+export interface Ratings {
+    [key: string]: number[];
+}
+export interface NewRatings {
+    [key: string]: number;
+}

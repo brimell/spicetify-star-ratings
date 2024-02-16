@@ -1,15 +1,13 @@
 import * as api from "./api";
-import { RatingsByTrack, TracksByRatings } from "./types/store";
+import { RatingsByTrack, TracksByRatings, PlaylistUris, Ratings, NewRatings } from "./types/store";
 interface Contents {
-    items: Array<{
-        type: string;
-        uri: string;
-        name: string;
-    }>;
-}
-
-interface PlaylistUris {
-    [key: string]: string;
+    items: [
+        {
+            type: string;
+            uri: string;
+            name: string;
+        },
+    ];
 }
 
 export function findFolderByUri(contents: Contents, uri: string) {
@@ -76,17 +74,20 @@ export function getRatings(allPlaylistItems: TracksByRatings): RatingsByTrack {
     return ratings;
 }
 
-export function takeHighestRatings(ratings) {
-    const newRatings = {};
+export function takeHighestRatings(ratings: Ratings) {
+    const newRatings: NewRatings = {};
     for (const [trackUri, trackRatings] of Object.entries(ratings)) newRatings[trackUri] = Math.max(...trackRatings);
     return newRatings;
 }
 
-export async function deleteLowestRatings(playlistUris, ratings) {
-    const promises = [];
+export async function deleteLowestRatings(playlistUris: PlaylistUris, ratings: Ratings): Promise<void> {
+    const promises: Promise<void>[] = [];
+
     for (const [trackUri, trackRatings] of Object.entries(ratings)) {
         if (trackRatings.length <= 1) continue;
         const highestRating = Math.max(...trackRatings);
+
+        // Filter out the highest rating and loop over the remaining ratings
         trackRatings
             .filter((rating) => rating != highestRating)
             .forEach((rating) => {
@@ -100,7 +101,7 @@ export async function deleteLowestRatings(playlistUris, ratings) {
     await Promise.all(promises);
 }
 
-export function getAlbumRating(ratings, album) {
+export function getAlbumRating(ratings: Ratings, album) {
     console.log("album is:", album);
     if (!album.albumUnion) return 0;
 

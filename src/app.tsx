@@ -459,6 +459,7 @@ async function loadRatings() {
 
     if (ratedFolder) {
         // Remove any playlist URIs associated with the rated folder
+        console.log('start', playlistUris, ratedFolder)
         let playlistUrisRemoved = false;
         [playlistUrisRemoved, playlistUris] = removePlaylistUris(playlistUris, ratedFolder);
         console.log(playlistUrisRemoved, playlistUris)
@@ -473,6 +474,7 @@ async function loadRatings() {
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatings(allPlaylistItems);
 
+        console.log('going to delete', ratings, playlistUris)
         await deleteLowestRatings(playlistUris, ratings);
 
         ratings = takeHighestRatings(ratings);

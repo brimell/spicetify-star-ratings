@@ -1,5 +1,3 @@
-import axios from "axios";
-
 export function showNotification(text) {
     Spicetify.showNotification(text);
 }
@@ -50,7 +48,6 @@ export async function getContents() {
 
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
     await Spicetify.Platform.PlaylistAPI.add(playlistUri, [trackUri]);
-    console.log(Spicetify.Platform)
 }
 
 export async function addTrackToLikedSongs(trackUri: string) {
