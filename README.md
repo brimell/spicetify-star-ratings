@@ -16,9 +16,9 @@ Settings, such as enabling/disabling half star ratings, can be accessed from the
 
 ## Implement List
 
+* [x] option to play songs with a minimum rating
 * [] option to play only unrated songs
 * [] option to play songs weighted by ratings
-* [] option to play songs with a minimum rating
 * [] option to show rateyourmusic ratings
 * [] option to upload ratings to rateyourmusic
 
