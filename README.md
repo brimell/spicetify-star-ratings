@@ -20,7 +20,7 @@ Settings, such as enabling/disabling half star ratings, can be accessed from the
 * [] option to play only unrated songs
 * [] option to play songs weighted by ratings
 * [] option to show rateyourmusic ratings
-* [] option to upload ratings to rateyourmusic
+* [] option to upload ratings to rateyourmusic (they only do albums)
 
 ## Star Rating Playlist Images
 
