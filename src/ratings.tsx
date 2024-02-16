@@ -53,12 +53,12 @@ export async function getAllPlaylistItems(playlistUris): Promise<TracksByRatings
     return allPlaylistItems;
 }
 
-export function getRatings(allPlaylistItems): RatingsByTrack {
-    const ratings = {};
+export function getRatings(allPlaylistItems: TracksByRatings): RatingsByTrack {
+    const ratings: RatingsByTrack = {};
     for (const [rating, items] of Object.entries(allPlaylistItems)) {
         for (const item of items) {
             const trackUri = item.link;
-            let trackRatings = [];
+            let trackRatings: string[] = [];
             if (ratings[trackUri]) trackRatings = ratings[trackUri];
             trackRatings.push(rating);
             ratings[trackUri] = trackRatings;
