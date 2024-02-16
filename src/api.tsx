@@ -53,54 +53,17 @@ function playlistUriToPlaylistId(uri: string): string {
 }
 
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
-    const playlistId = playlistUriToPlaylistId(playlistUri);
-    try {
-        await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            "uris": [trackUri],
-        });
-    } catch (error) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            "uris": [trackUri],
-        });
-    }
+    await Spicetify.Platform.PlaylistAPI.add(playlistUri, [trackUri], {});
+    console.log(Spicetify.Platform)
 }
-
-// export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
-//     const playlistId = playlistUriToPlaylistId(playlistUri);
-//     const trackId = trackUri.replace('spotify:track:', '');
-//     const token = Spicetify.Platform.Session.accessToken;
-//     await axios.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks?uris=spotify%3Atrack%3A${trackId}`, {}, {
-//         headers: {
-//             'Authorization': `Bearer ${token}`
-//         }
-//     });
-// }
 
 export async function addTrackToLikedSongs(trackUri: string) {
     const trackId = trackUri.replace("spotify:track:", "");
     await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`);
 }
 
-// export async function addTrackToLikedSongs(trackUri: string) {
-//     const trackId = trackUri.replace('spotify:track:', '');
-//     const token = Spicetify.Platform.Session.accessToken;
-//     await axios.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`, {}, {
-//         headers: {
-//             'Authorization': `Bearer ${token}`
-//         }
-//     });
-// }
-
 export async function deleteTrackFromPlaylist(playlistUri: string, trackUri: string) {
-    const playlistId = playlistUriToPlaylistId(playlistUri);
-    await Spicetify.CosmosAsync.del(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-        tracks: [
-            {
-                uri: trackUri,
-            },
-        ],
-    });
+    await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [trackUri], {});
 }
 
 export async function getPlaylistItems(uri: string) {
