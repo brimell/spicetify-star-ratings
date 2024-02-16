@@ -23,7 +23,7 @@ let settings = null;
 let ratedFolderUri: string | null = null;
 let ratings: Ratings = {};
 let playlistNames = {};
-let playlistUris: PlaylistUris  = {};
+let playlistUris: PlaylistUris = {};
 
 let originalTracklistHeaderCss = null;
 let originalTracklistTrackCss = null;
@@ -97,6 +97,7 @@ async function handleRemoveRating(trackUri: string, rating: number) {
 async function handleSetRating(trackUri: string, oldRating: number | undefined, newRating: number) {
     // Update the rating in the ratings object
     ratings[trackUri] = newRating;
+    console.log(ratings);
 
     // If there was a previous rating, remove the track from the old playlist
     if (oldRating) {
@@ -258,8 +259,9 @@ function updateTracklist() {
     let tracklistsChanged = tracklists.length !== oldTracklists.length;
 
     // Check if individual tracklists have changed
-    for (let i = 0; i < tracklists.length; i++)
+    for (let i = 0; i < tracklists.length; i++) {
         if (!tracklists[i].isEqualNode(oldTracklists[i])) tracklistsChanged = true;
+    }
 
     // Reset CSS if tracklists have changed
     if (tracklistsChanged) {
@@ -274,7 +276,7 @@ function updateTracklist() {
         null,
         null,
         "[index] 16px [first] 4fr [var1] 2fr [var2] 1fr [last] minmax(120px,1fr)",
-        "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [last] minmax(120px,1fr)",
+        "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [var3] 2fr [last] minmax(120px,1fr)",
         "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [var3] minmax(120px,2fr) [var3] 2fr [last] minmax(120px,1fr)",
     ];
 
@@ -367,7 +369,6 @@ function updateTracklist() {
     }
 }
 
-
 function onClickShowPlaylistStars() {
     if (settings.showPlaylistStars) updateTracklist();
     else restoreTracklist();
@@ -380,7 +381,7 @@ async function observerCallback(keys) {
         if (oldMainElement) {
             mainElementObserver.disconnect();
         }
-        console.log('observerCallback')
+        console.log("observerCallback");
         updateTracklist();
         mainElementObserver.observe(mainElement, {
             childList: true,
@@ -497,7 +498,6 @@ async function loadRatings() {
 
         ratings = takeHighestRatings(ratings);
         playlistNames = getPlaylistNames(playlistUris, ratedFolder);
-        
     } else if (Object.keys(playlistUris).length > 0) {
         playlistUris = {};
         savePlaylistUris(playlistUris);
