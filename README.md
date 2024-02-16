@@ -7,7 +7,7 @@ Add star ratings to Spotify
 
 1. Install [Spicetify](https://spicetify.app)
 2. Install "Star Ratings" from the Marketplace
-   ![Install](imgs/install.png)
+   <img src="imgs/install.png" height="600px" alt="install">
 
 ## Settings
 
