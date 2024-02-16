@@ -53,18 +53,16 @@ function playlistUriToPlaylistId(uri: string): string {
 }
 
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
+    const playlistId = playlistUriToPlaylistId(playlistUri);
     try {
-        const playlistId = playlistUriToPlaylistId(playlistUri);
-        console.log(`@${playlistId}@`, `@${trackUri}@`);
-
-        // Make POST request to add track to playlist
         await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-            uris: [trackUri],
+            "uris": [trackUri],
         });
-
-        console.log("Added track to playlist");
     } catch (error) {
-        console.error("Error adding track to playlist:", error);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
+            "uris": [trackUri],
+        });
     }
 }
 
