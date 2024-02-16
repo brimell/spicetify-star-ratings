@@ -13,7 +13,7 @@ export function findStars(idSuffix) {
     return [stars, starElements];
 }
 
-function createStar(starsId, n, size) {
+function createStar(starsId: string, n: number, size: number) {
     const xmlns = "http://www.w3.org/2000/svg";
     const star = document.createElementNS(xmlns, "svg");
     const id = `${starsId}-${n}`;
