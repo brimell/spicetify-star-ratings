@@ -48,12 +48,8 @@ export async function getContents() {
     return await Spicetify.Platform.RootlistAPI.getContents();
 }
 
-function playlistUriToPlaylistId(uri: string): string {
-    return uri.replace("spotify:playlist:", "");
-}
-
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
-    await Spicetify.Platform.PlaylistAPI.add(playlistUri, [trackUri], {});
+    await Spicetify.Platform.PlaylistAPI.add(playlistUri, [trackUri]);
     console.log(Spicetify.Platform)
 }
 
@@ -63,7 +59,7 @@ export async function addTrackToLikedSongs(trackUri: string) {
 }
 
 export async function deleteTrackFromPlaylist(playlistUri: string, trackUri: string) {
-    await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [trackUri], {});
+    await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [trackUri]);
 }
 
 export async function getPlaylistItems(uri: string) {

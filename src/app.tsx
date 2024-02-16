@@ -16,6 +16,7 @@ import {
     getAlbumRating,
     sortPlaylistByRating,
 } from "./ratings";
+import { all } from "axios";
 
 let settings = null;
 
@@ -470,6 +471,7 @@ async function loadRatings() {
 
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatings(allPlaylistItems);
+        console.log(allPlaylistItems, ratings);
 
         await deleteLowestRatings(playlistUris, ratings);
 

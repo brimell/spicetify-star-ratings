@@ -1,4 +1,5 @@
 import * as api from "./api";
+import { RatingsByTrack, TracksByRatings } from "./types/store";
 
 export function findFolderByUri(contents, uri) {
     return contents.items.find((item) => item.type === "folder" && item.uri === uri);
@@ -44,7 +45,7 @@ export function getPlaylistNames(playlistUris, ratedFolder) {
     return playlistNames;
 }
 
-export async function getAllPlaylistItems(playlistUris) {
+export async function getAllPlaylistItems(playlistUris): Promise<TracksByRatings> {
     const ratings = Object.keys(playlistUris);
     const allPlaylistItemsArray = await Promise.all(ratings.map((rating) => api.getPlaylistItems(playlistUris[rating])));
     const allPlaylistItems = {};
@@ -52,7 +53,7 @@ export async function getAllPlaylistItems(playlistUris) {
     return allPlaylistItems;
 }
 
-export function getRatings(allPlaylistItems) {
+export function getRatings(allPlaylistItems): RatingsByTrack {
     const ratings = {};
     for (const [rating, items] of Object.entries(allPlaylistItems)) {
         for (const item of items) {
