@@ -1,17 +1,27 @@
 import * as api from "./api";
 import { RatingsByTrack, TracksByRatings } from "./types/store";
+interface Contents {
+    items: Array<{
+        type: string;
+        uri: string;
+        name: string;
+    }>;
+}
 
-export function findFolderByUri(contents, uri) {
+interface PlaylistUris {
+    [key: string]: string;
+}
+
+export function findFolderByUri(contents: Contents, uri: string) {
     return contents.items.find((item) => item.type === "folder" && item.uri === uri);
 }
 
-export function findFolderByName(contents, name) {
+export function findFolderByName(contents: Contents, name: string) {
     return contents.items.find((item) => item.type === "folder" && item.name === name);
 }
 
-// Remove playlist URIs from settings when they no longer exist
-export function removePlaylistUris(playlistUris, ratedFolder) {
-    const newPlaylistUris = {};
+export function removePlaylistUris(playlistUris: PlaylistUris, ratedFolder: Contents): [boolean, PlaylistUris] {
+    const newPlaylistUris: PlaylistUris = {};
     let changed = false;
     for (const [rating, playlistUri] of Object.entries(playlistUris)) {
         if (ratedFolder.items.find((item) => item.uri === playlistUri)) newPlaylistUris[rating] = playlistUri;
@@ -20,9 +30,8 @@ export function removePlaylistUris(playlistUris, ratedFolder) {
     return [changed, newPlaylistUris];
 }
 
-// Add playlist URIs of numbered rated playlists when they currently don't exist in settings
-export function addPlaylistUris(playlistUris: [string], ratedFolder) {
-    const newPlaylistUris = { ...playlistUris };
+export function addPlaylistUris(playlistUris: PlaylistUris, ratedFolder: Contents): [boolean, PlaylistUris] {
+    const newPlaylistUris: PlaylistUris = { ...playlistUris };
     let changed = false;
     const ratings = ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0"];
     const unmappedRatings = ratings.filter((rating) => !playlistUris.hasOwnProperty(rating));
@@ -35,8 +44,8 @@ export function addPlaylistUris(playlistUris: [string], ratedFolder) {
     return [changed, newPlaylistUris];
 }
 
-export function getPlaylistNames(playlistUris, ratedFolder) {
-    const playlistNames = {};
+export function getPlaylistNames(playlistUris: PlaylistUris, ratedFolder: Contents): PlaylistUris {
+    const playlistNames: PlaylistUris = {};
     ratedFolder.items
         .filter((item) => Object.values(playlistUris).includes(item.uri))
         .forEach((item) => {
@@ -45,10 +54,10 @@ export function getPlaylistNames(playlistUris, ratedFolder) {
     return playlistNames;
 }
 
-export async function getAllPlaylistItems(playlistUris): Promise<TracksByRatings> {
+export async function getAllPlaylistItems(playlistUris: PlaylistUris): Promise<TracksByRatings> {
     const ratings = Object.keys(playlistUris);
     const allPlaylistItemsArray = await Promise.all(ratings.map((rating) => api.getPlaylistItems(playlistUris[rating])));
-    const allPlaylistItems = {};
+    const allPlaylistItems: TracksByRatings = {};
     for (let i = 0; i < ratings.length; i++) allPlaylistItems[ratings[i]] = allPlaylistItemsArray[i];
     return allPlaylistItems;
 }

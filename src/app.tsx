@@ -461,6 +461,7 @@ async function loadRatings() {
         // Remove any playlist URIs associated with the rated folder
         let playlistUrisRemoved = false;
         [playlistUrisRemoved, playlistUris] = removePlaylistUris(playlistUris, ratedFolder);
+        console.log(playlistUrisRemoved, playlistUris)
 
         // Add any new playlist URIs associated with the rated folder
         let playlistUrisAdded = false;
@@ -471,7 +472,6 @@ async function loadRatings() {
 
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatings(allPlaylistItems);
-        console.log(allPlaylistItems, ratings);
 
         await deleteLowestRatings(playlistUris, ratings);
 
