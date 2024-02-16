@@ -247,27 +247,38 @@ function restoreTracklist() {
 }
 
 function updateTracklist() {
+    // Check if showing playlist stars is enabled
     if (!settings.showPlaylistStars) return;
 
+    // Store current tracklists as oldTracklists
     oldTracklists = tracklists;
+    // Update tracklists
     tracklists = Array.from(document.querySelectorAll(".main-trackList-indexable"));
+    // Check if tracklists have changed
     let tracklistsChanged = tracklists.length !== oldTracklists.length;
-    for (let i = 0; i < tracklists.length; i++) if (!tracklists[i].isEqualNode(oldTracklists[i])) tracklistsChanged = true;
+
+    // Check if individual tracklists have changed
+    for (let i = 0; i < tracklists.length; i++)
+        if (!tracklists[i].isEqualNode(oldTracklists[i])) tracklistsChanged = true;
+
+    // Reset CSS if tracklists have changed
     if (tracklistsChanged) {
         originalTracklistHeaderCss = null;
         originalTracklistTrackCss = null;
     }
 
+    // Define CSS for different tracklist columns
     const tracklistColumnCss = [
         null,
         null,
         null,
         null,
         "[index] 16px [first] 4fr [var1] 2fr [var2] 1fr [last] minmax(120px,1fr)",
-        "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [var3] 2fr [last] minmax(120px,1fr)",
+        "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [last] minmax(120px,1fr)",
         "[index] 16px [first] 6fr [var1] 4fr [var2] 3fr [var3] minmax(120px,2fr) [var3] 2fr [last] minmax(120px,1fr)",
     ];
 
+    // Store new tracklist header CSS
     let newTracklistHeaderCss = null;
     const tracklistHeaders = document.querySelectorAll(".main-trackList-trackListHeaderRow");
     // No tracklist header on Artist page
@@ -275,6 +286,7 @@ function updateTracklist() {
         let lastColumn = tracklistHeader.querySelector(".main-trackList-rowSectionEnd");
         let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
 
+        // Set tracklist header CSS based on column index
         if (!originalTracklistHeaderCss) originalTracklistHeaderCss = getComputedStyle(tracklistHeader).gridTemplateColumns;
         if (originalTracklistHeaderCss && tracklistColumnCss[colIndexInt]) {
             tracklistHeader.style["grid-template-columns"] = tracklistColumnCss[colIndexInt];
@@ -282,9 +294,12 @@ function updateTracklist() {
         }
     });
 
+    // Iterate through each tracklist
     for (const tracklist of tracklists) {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
+        // Iterate through each track
         for (const track of tracks) {
+            // Function to get heart element of the track
             const getHeart = () => {
                 return (
                     track.getElementsByClassName("main-addButton-button")[0] ??
@@ -293,16 +308,16 @@ function updateTracklist() {
                     track.querySelector("button[aria-label='Add to playlist']")
                 );
             };
-            const heart = getHeart();
             const hasStars = track.getElementsByClassName("stars").length > 0;
             const trackUri = getTracklistTrackUri(track);
             const isTrack = trackUri.includes("track");
 
             let ratingColumn = track.querySelector(".starRatings");
+            // Add column for stars if not already present
             if (!ratingColumn) {
-                // Add column for stars
                 let lastColumn = track.querySelector(".main-trackList-rowSectionEnd");
                 let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
+
                 lastColumn.setAttribute("aria-colindex", (colIndexInt + 1).toString());
                 ratingColumn = document.createElement("div");
                 ratingColumn.setAttribute("aria-colindex", colIndexInt.toString());
@@ -317,12 +332,16 @@ function updateTracklist() {
                     track.style["grid-template-columns"] = newTracklistHeaderCss ? newTracklistHeaderCss : tracklistColumnCss[colIndexInt];
             }
 
-            if (!heart || !trackUri || hasStars || !isTrack) continue;
+            // Continue to the next track if no heart, no track URI, has stars already, or not a track
+            if (!trackUri || hasStars || !isTrack) continue;
 
+            // Create stars for the track and set its rating
             const starData = createStars(trackUriToTrackId(trackUri), 16);
             const stars = starData[0];
             const starElements = starData[1];
             const currentRating = ratings[trackUri] ?? 0.0;
+
+            // Append stars to rating column and set listeners
             ratingColumn.appendChild(stars);
             setRating(starElements, currentRating);
             addStarsListeners(
@@ -333,9 +352,10 @@ function updateTracklist() {
                 getHeart,
             );
 
-            // Add listeners for hovering over a track in the tracklist
+            // Set visibility of stars based on rating
             stars.style.visibility = typeof ratings[trackUri] !== "undefined" ? "visible" : "hidden";
 
+            // Add listeners for hovering over a track in the tracklist
             track.addEventListener("mouseover", () => {
                 stars.style.visibility = "visible";
             });
@@ -346,6 +366,7 @@ function updateTracklist() {
         }
     }
 }
+
 
 function onClickShowPlaylistStars() {
     if (settings.showPlaylistStars) updateTracklist();
@@ -359,6 +380,7 @@ async function observerCallback(keys) {
         if (oldMainElement) {
             mainElementObserver.disconnect();
         }
+        console.log('observerCallback')
         updateTracklist();
         mainElementObserver.observe(mainElement, {
             childList: true,
