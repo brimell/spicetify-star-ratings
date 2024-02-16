@@ -31,7 +31,7 @@ let originalTracklistTrackCss = null;
 let oldMainElement = null;
 let mainElement = null;
 let mainElementObserver = null;
-let tracklists = [];
+let tracklists: HTMLCollectionOf<Element> = [];
 let oldTracklists = [];
 
 let oldNowPlayingWidget = null;
@@ -234,7 +234,7 @@ function restoreTracklist() {
         tracklistHeader.style["grid-template-columns"] = originalTracklistHeaderCss;
     });
 
-    for (const tracklist of tracklists) {
+    for (const tracklist of Array.from(tracklists)) {
         const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
         for (const track of tracks) {
             let ratingColumn = track.querySelector(".starRatings");
@@ -275,7 +275,7 @@ function updateTracklist() {
     createStarsForTracklists(tracklists);
 }
 
-function createStarsForTracklists(tracklists) {
+function createStarsForTracklists(tracklists: HTMLCollectionOf<Element>) {
     // Store new tracklist header CSS
     let newTracklistHeaderCss = null;
     const tracklistHeaders = document.querySelectorAll(".main-trackList-trackListHeaderRow");
