@@ -47,7 +47,7 @@ export async function getContents() {
 }
 
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
-    await Spicetify.Platform.PlaylistAPI.add(playlistUri, [trackUri]);
+    await Spicetify.Platform.PlaylistAPI.add(playlistUri, [trackUri], {after: 1, before: 0});
 }
 
 export async function addTrackToLikedSongs(trackUri: string) {
