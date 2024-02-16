@@ -47,9 +47,15 @@ export async function getContents() {
 }
 
 export async function addTrackToLikedSongs(trackUri: string) {
-    const trackId = trackUri.replace("spotify:track:", "");
-    // console.log('this',await Spicetify.Platform.LibraryAPI.add())
-    await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`);
+    // false refers to whether to silently add to liked songs (no notification)
+    console.log(Spicetify.Platform.LibraryAPI)
+    await Spicetify.Platform.LibraryAPI.add({uris: [trackUri], silent: 0})
+}
+
+export async function removeTrackFromLikedSongs(trackUri: string) {
+    // false refers to whether to silently add to liked songs (no notification)
+    console.log(Spicetify.Platform.LibraryAPI)
+    await Spicetify.Platform.LibraryAPI.remove({uris: [trackUri], silent: 0})
 }
 
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
