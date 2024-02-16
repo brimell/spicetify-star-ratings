@@ -471,7 +471,6 @@ async function loadRatings() {
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatings(allPlaylistItems);
 
-        console.log('going to delete', ratings, playlistUris)
         await deleteLowestRatings(playlistUris, ratings);
 
         ratings = takeHighestRatings(ratings);
