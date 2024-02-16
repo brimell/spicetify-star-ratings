@@ -90,7 +90,7 @@ async function handleRemoveRating(trackUri: string, rating: number) {
     const ratingAsString = rating.toFixed(1);
     const playlistUri = playlistUris[ratingAsString];
     const playlistName = playlistNames[playlistUri];
-    await api.deleteTrackFromPlaylist(playlistUri, trackUri);
+    await api.removeTrackFromPlaylist(playlistUri, trackUri);
     api.showNotification(`Removed from ${playlistName}`);
 }
 
@@ -103,7 +103,7 @@ async function handleSetRating(trackUri: string, oldRating: number | undefined, 
         const oldRatingAsString = oldRating.toFixed(1);
         const playlistUri = playlistUris[oldRatingAsString];
         const playlistName = playlistNames[playlistUri];
-        await api.deleteTrackFromPlaylist(playlistUri, trackUri);
+        await api.removeTrackFromPlaylist(playlistUri, trackUri);
     }
 
     // Create a 'Rated' folder if it doesn't exist

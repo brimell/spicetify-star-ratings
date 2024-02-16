@@ -95,7 +95,7 @@ export async function deleteLowestRatings(playlistUris: PlaylistUris, ratings: R
                 console.log(
                     `Removing track ${trackUri} with lower rating ${rating} and higher rating ${highestRating} from lower rated playlist ${playlistUri}.`,
                 );
-                promises.push(api.deleteTrackFromPlaylist(playlistUri, trackUri));
+                promises.push(api.removeTrackFromPlaylist(playlistUri, trackUri));
             });
     }
     await Promise.all(promises);

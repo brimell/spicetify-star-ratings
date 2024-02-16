@@ -55,8 +55,10 @@ export async function addTrackToLikedSongs(trackUri: string) {
     await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`);
 }
 
-export async function deleteTrackFromPlaylist(playlistUri: string, trackUri: string) {
-    await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [trackUri]);
+export async function removeTrackFromPlaylist(playlistUri: string, trackUri: string) {
+    console.log(Spicetify.Platform);
+    const res = await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [trackUri]);
+    console.log(res);
 }
 
 export async function getPlaylistItems(uri: string) {
@@ -65,7 +67,7 @@ export async function getPlaylistItems(uri: string) {
 }
 
 // TODO: Remove when Linux gets newer release
-export async function isAppLaterThan(specifiedVersion) {
+export async function isAppLaterThan(specifiedVersion: string) {
     let appInfo = await Spicetify.CosmosAsync.get("sp://desktop/v1/version");
     let result = appInfo.version.localeCompare(specifiedVersion, undefined, { numeric: true, sensitivity: "base" });
     return result === 1;
