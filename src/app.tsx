@@ -55,8 +55,8 @@ function isAlbumPage() {
     return matches[1];
 }
 
-function trackUriToTrackId(trackUri) {
-    return trackUri.match(/spotify:track:(.*)/)[1];
+function trackUriToTrackId(trackUri: string): string {
+    return trackUri.replace("spotify:track:", "");
 }
 
 function getTracklistTrackUri(tracklistElement) {

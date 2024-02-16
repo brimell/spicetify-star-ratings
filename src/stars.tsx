@@ -55,9 +55,9 @@ function createStar(starsId, n, size) {
     return [star, stopFirst, stopSecond];
 }
 
-export function createStars(idSuffix, size) {
+export function createStars(trackURI: string, size: number): [HTMLSpanElement, (SVGSVGElement | SVGStopElement)[][]] {
     const stars = document.createElement("span");
-    const id = `stars-${idSuffix}`;
+    const id = `stars-${trackURI}`;
     stars.className = "stars";
     stars.id = id;
     stars.style.whiteSpace = "nowrap";
