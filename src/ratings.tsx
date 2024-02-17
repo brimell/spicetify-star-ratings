@@ -1,5 +1,5 @@
 import * as api from "./api";
-import { RatingsByTrack, TracksByRatings, PlaylistUris, Ratings, NewRatings } from "./types/store";
+import { RatingsByTrack, TracksByRatings, PlaylistUris, Ratings } from "./types/store";
 interface Contents {
     items: [
         {
@@ -60,45 +60,17 @@ export async function getAllPlaylistItems(playlistUris: PlaylistUris): Promise<T
     return allPlaylistItems;
 }
 
-export function getRatings(allPlaylistItems: TracksByRatings): RatingsByTrack {
+export function getRatingsByTrack(allPlaylistItems: TracksByRatings): RatingsByTrack {
     const ratings: RatingsByTrack = {};
-    for (const [rating, items] of Object.entries(allPlaylistItems)) {
-        for (const item of items) {
-            const trackUri = item.link;
-            let trackRatings: string[] = [];
-            if (ratings[trackUri]) trackRatings = ratings[trackUri];
-            trackRatings.push(rating);
-            ratings[trackUri] = trackRatings;
+    
+    for (const [rating, tracks] of Object.entries(allPlaylistItems)) {
+        for (const track of tracks) {
+            const trackUri = track.link;
+
+            ratings[trackUri] = rating;
         }
     }
     return ratings;
-}
-
-export function takeHighestRatings(ratings: Ratings) {
-    const newRatings: NewRatings = {};
-    for (const [trackUri, trackRatings] of Object.entries(ratings)) newRatings[trackUri] = Math.max(...trackRatings);
-    return newRatings;
-}
-
-export async function deleteLowestRatings(playlistUris: PlaylistUris, ratings: Ratings): Promise<void> {
-    const promises: Promise<void>[] = [];
-
-    for (const [trackUri, trackRatings] of Object.entries(ratings)) {
-        if (trackRatings.length <= 1) continue;
-        const highestRating = Math.max(...trackRatings);
-
-        // Filter out the highest rating and loop over the remaining ratings
-        trackRatings
-            .filter((rating) => rating != highestRating)
-            .forEach((rating) => {
-                const playlistUri = playlistUris[rating];
-                console.log(
-                    `Removing track ${trackUri} with lower rating ${rating} and higher rating ${highestRating} from lower rated playlist ${playlistUri}.`,
-                );
-                promises.push(api.removeTrackFromPlaylist(playlistUri, trackUri));
-            });
-    }
-    await Promise.all(promises);
 }
 
 export function getAlbumRating(ratings: Ratings, album) {

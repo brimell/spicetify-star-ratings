@@ -9,16 +9,14 @@ import {
     addPlaylistUris,
     removePlaylistUris,
     getAllPlaylistItems,
-    getRatings,
-    takeHighestRatings,
+    getRatingsByTrack,
     getPlaylistNames,
-    deleteLowestRatings,
     getAlbumRating,
     sortPlaylistByRating,
 } from "./ratings";
 import { PlaylistUris, Ratings } from "./types/store";
 import { tracklistColumnCss } from "./css/css";
-import { getTracklistTrackUri, isAlbumPage, trackUriToTrackId } from "./utils/utils";
+import { getTracklistTrackUri, isAlbumPage, trackUriToTrackId, getNowPlayingHeart, getNowPlayingTrackUri } from "./utils/utils";
 
 let settings = null;
 
@@ -50,14 +48,6 @@ let clickListenerRunning = false;
 let ratingsLoading = false;
 let isSorting = false;
 
-function getNowPlayingHeart() {
-    return document.querySelector(".main-nowPlayingWidget-nowPlaying .control-button-heart");
-}
-
-const getNowPlayingTrackUri = () => {
-    return Spicetify.Player.data.item.uri;
-};
-
 function updateAlbumRating() {
     const averageRating = getAlbumRating(ratings, album);
 
@@ -73,16 +63,14 @@ async function handleRemoveRating(trackUri: string, rating: number) {
     api.showNotification(`Removed from ${playlistName}`);
 }
 
-async function handleSetRating(trackUri: string, oldRating: number | undefined, newRating: number) {
+async function handleSetRating(trackUri: string, oldRating: string | undefined, newRating: string) {
     // Update the rating in the ratings object
     ratings[trackUri] = newRating;
-    console.log(ratings);
 
     // If there was a previous rating, remove the track from the old playlist
     if (oldRating) {
-        const oldRatingAsString = oldRating.toFixed(1);
+        const oldRatingAsString = oldRating;
         const playlistUri = playlistUris[oldRatingAsString];
-        const playlistName = playlistNames[playlistUri];
         await api.removeTrackFromPlaylist(playlistUri, trackUri);
     }
 
@@ -96,16 +84,15 @@ async function handleSetRating(trackUri: string, oldRating: number | undefined, 
     }
 
     // Convert the new rating to string format with one decimal place
-    const newRatingAsString = newRating.toFixed(1);
-    let playlistUri = playlistUris[newRatingAsString];
+    let playlistUri = playlistUris[newRating];
 
     // If the Rated playlist for the new rating doesn't exist, create it
     if (!playlistUri) {
-        playlistUri = await api.createPlaylist(newRatingAsString, ratedFolderUri);
+        playlistUri = await api.createPlaylist(newRating, ratedFolderUri);
         await api.makePlaylistPrivate(playlistUri);
-        playlistUris[newRatingAsString] = playlistUri;
+        playlistUris[newRating] = playlistUri;
         savePlaylistUris(playlistUris);
-        playlistNames[playlistUri] = newRatingAsString;
+        playlistNames[playlistUri] = newRating;
     }
 
     // Add the track to the playlist for the new rating
@@ -184,9 +171,10 @@ function getDeregisterKeyboardShortcuts(keys) {
 }
 
 function addStarsListeners(starData, getTrackUri, getHeart) {
-    const getCurrentRating = (trackUri) => {
+    function getCurrentRating(trackUri: string) {
+        console.log(ratings[trackUri] ?? 0.0)
         return ratings[trackUri] ?? 0.0;
-    };
+    }
 
     const [stars, starElements] = starData;
 
@@ -466,11 +454,9 @@ async function loadRatings() {
         if (playlistUrisAdded || playlistUrisRemoved) savePlaylistUris(playlistUris);
 
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
-        ratings = getRatings(allPlaylistItems);
+        ratings = getRatingsByTrack(allPlaylistItems);
+        console.log(ratings)
 
-        await deleteLowestRatings(playlistUris, ratings);
-
-        ratings = takeHighestRatings(ratings);
         playlistNames = getPlaylistNames(playlistUris, ratedFolder);
     } else if (Object.keys(playlistUris).length > 0) {
         playlistUris = {};

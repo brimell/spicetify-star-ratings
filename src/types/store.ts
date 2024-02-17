@@ -1,11 +1,17 @@
 export type RatingsByTrack = {
-    [key: string]: string[];
+    [key: string]: string;
 };
 
 export type TracksByRatings = {
-    [key: number]: Track[];
+    [key: string]: Track[];
 };
 
+export interface PlaylistUris {
+    [key: string]: string;
+}
+export interface Ratings {
+    [key: string]: string;
+}
 export type Track = {
     hasLyrics: boolean;
     link: string;
@@ -67,13 +73,3 @@ export type Track = {
         xlarge: string;
     };
 };
-
-export interface PlaylistUris {
-    [key: string]: string;
-}
-export interface Ratings {
-    [key: string]: number;
-}
-export interface NewRatings {
-    [key: string]: number;
-}
