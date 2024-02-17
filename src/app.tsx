@@ -109,9 +109,9 @@ function getClickListener(i, ratingOverride, starData, getTrackUri, getHeart) {
         clickListenerRunning = true;
         const [stars, starElements] = starData;
         const star = starElements[i][0];
-        const trackUri = getTrackUri();
+        const trackUri: string = getTrackUri();
         const oldRating = ratings[trackUri];
-        let newRating = ratingOverride !== null ? ratingOverride : getMouseoverRating(settings, star, i);
+        let newRating: string = ratingOverride !== null ? ratingOverride : getMouseoverRating(settings, star, i).toFixed(1);
 
         let promise = null;
         let displayRating = null;
@@ -130,7 +130,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri, getHeart) {
         }
 
         promise.finally(() => {
-            tracklistStarData = findStars(trackUriToTrackId(trackUri));
+            let tracklistStarData = findStars(trackUriToTrackId(trackUri));
             if (tracklistStarData) {
                 setRating(tracklistStarData[1], displayRating);
                 tracklistStarData[0].style.visibility = oldRating === newRating ? "hidden" : "visible";
@@ -394,7 +394,7 @@ async function updateAlbumStars() {
 function updateNowPlayingWidget() {
     if (!nowPlayingWidgetStarData) return;
 
-    const getTrackUri = () => {
+    function getTrackUri(): string {
         return Spicetify.Player.data.item.uri;
     };
     const trackUri = getTrackUri();

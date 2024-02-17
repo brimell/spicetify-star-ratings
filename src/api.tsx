@@ -48,7 +48,6 @@ export async function getContents() {
 
 export async function addTrackToLikedSongs(trackUri: string) {
     // false refers to whether to silently add to liked songs (no notification)
-    console.log(Spicetify.Platform.LibraryAPI)
     await Spicetify.Platform.LibraryAPI.add({uris: [trackUri], silent: 0})
 }
 
