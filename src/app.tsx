@@ -172,7 +172,6 @@ function getDeregisterKeyboardShortcuts(keys) {
 
 function addStarsListeners(starData, getTrackUri, getHeart) {
     function getCurrentRating(trackUri: string) {
-        console.log(ratings[trackUri] ?? 0.0)
         return ratings[trackUri] ?? 0.0;
     }
 
@@ -343,7 +342,6 @@ async function observerCallback(keys) {
         if (oldMainElement) {
             mainElementObserver.disconnect();
         }
-        console.log("observerCallback");
         updateTracklist();
         mainElementObserver.observe(mainElement, {
             childList: true,
@@ -455,7 +453,6 @@ async function loadRatings() {
 
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatingsByTrack(allPlaylistItems);
-        console.log(ratings)
 
         playlistNames = getPlaylistNames(playlistUris, ratedFolder);
     } else if (Object.keys(playlistUris).length > 0) {
