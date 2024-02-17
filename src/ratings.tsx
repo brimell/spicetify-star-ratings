@@ -62,7 +62,7 @@ export async function getAllPlaylistItems(playlistUris: PlaylistUris): Promise<T
 
 export function getRatingsByTrack(allPlaylistItems: TracksByRatings): RatingsByTrack {
     const ratings: RatingsByTrack = {};
-    
+
     for (const [rating, tracks] of Object.entries(allPlaylistItems)) {
         for (const track of tracks) {
             const trackUri = track.link;
@@ -73,24 +73,24 @@ export function getRatingsByTrack(allPlaylistItems: TracksByRatings): RatingsByT
     return ratings;
 }
 
-export function getAlbumRating(ratings: Ratings, album) {
+export function getAlbumRating(ratings: Ratings, album): string {
     console.log("album is:", album);
-    if (!album.albumUnion) return 0;
+    if (!album.albumUnion) return "0.0";
 
     const items = album.albumUnion.tracks.items;
     let sumRatings = 0.0;
     let numRatings = 0;
     for (const item of items) {
-        const rating = ratings[item.track.uri];
+        const rating = parseFloat(ratings[item.track.uri]);
         if (!rating) continue;
-        sumRatings += parseFloat(rating);
+        sumRatings += rating;
         numRatings += 1;
     }
     let averageRating = 0.0;
     if (numRatings > 0) averageRating = sumRatings / numRatings;
     // Round to nearest 0.5
-    averageRating = (Math.round(averageRating * 2) / 2).toFixed(1);
-    return averageRating;
+    averageRating = (Math.round(averageRating * 2) / 2);
+    return averageRating.toFixed(1);
 }
 
 export async function sortPlaylistByRating(playlistUri, ratings) {
