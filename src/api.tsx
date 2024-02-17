@@ -54,7 +54,6 @@ export async function addTrackToLikedSongs(trackUri: string) {
 
 export async function removeTrackFromLikedSongs(trackUri: string) {
     // false refers to whether to silently add to liked songs (no notification)
-    console.log(Spicetify.Platform.LibraryAPI)
     await Spicetify.Platform.LibraryAPI.remove({uris: [trackUri], silent: 0})
 }
 
