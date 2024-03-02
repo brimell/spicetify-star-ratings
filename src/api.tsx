@@ -47,6 +47,12 @@ export async function getContents() {
 }
 
 export async function addTrackToLikedSongs(trackUri: string) {
+    // check if track is already liked
+    const isLiked = await Spicetify.Platform.LibraryAPI.isLiked(trackUri);
+    if (isLiked) {
+        return;
+    }
+    
     // false refers to whether to silently add to liked songs (no notification)
     await Spicetify.Platform.LibraryAPI.add({uris: [trackUri], silent: 0})
 }
