@@ -48,8 +48,8 @@ export async function getContents() {
 
 export async function addTrackToLikedSongs(trackUri: string) {
     // check if track is already liked
-    const isLiked = await Spicetify.Platform.LibraryAPI.isLiked(trackUri);
-    if (isLiked) {
+    const isLiked = await Spicetify.Platform.LibraryAPI.contains(trackUri);
+    if (isLiked[0]) {
         return;
     }
     
