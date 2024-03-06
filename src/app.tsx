@@ -54,10 +54,9 @@ function updateAlbumRating() {
     setRating(albumStarData[1], averageRating);
 }
 
-async function handleRemoveRating(trackUri: string, rating: number) {
+async function handleRemoveRating(trackUri: string, rating: string) {
     delete ratings[trackUri];
-    const ratingAsString = rating.toFixed(1);
-    const playlistUri = playlistUris[ratingAsString];
+    const playlistUri = playlistUris[rating];
     const playlistName = playlistNames[playlistUri];
     await api.removeTrackFromPlaylist(playlistUri, trackUri);
     api.showNotification(`Removed from ${playlistName}`);

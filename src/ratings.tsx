@@ -93,7 +93,7 @@ export function getAlbumRating(ratings: Ratings, album): string {
     return averageRating.toFixed(1);
 }
 
-export async function sortPlaylistByRating(playlistUri, ratings) {
+export async function sortPlaylistByRating(playlistUri: string, ratings: RatingsByTrack) {
     const ratingKeys = ["5.0", "4.5", "4.0", "3.5", "3.0", "2.5", "2.0", "1.5", "1.0", "0.5", "0.0"];
 
     const items = await api.getPlaylistItems(playlistUri);
@@ -103,10 +103,11 @@ export async function sortPlaylistByRating(playlistUri, ratings) {
     // Create map from ratings to list of UIDs
     const ratingToUids = {};
     for (const rating of ratingKeys) ratingToUids[rating] = [];
+
     for (const item of items) {
-        const rating = ratings[item.link] ?? 0.0;
-        const ratingAsString = rating.toFixed(1);
-        ratingToUids[ratingAsString].push(item.rowId);
+        let rating = ratings[item.link] ?? 0.0;
+        if (typeof rating === "number") rating = rating.toFixed(1);
+        ratingToUids[rating].push(item.rowId);
     }
 
     function getHighestRatedUid(ratingToUids) {

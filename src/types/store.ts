@@ -1,4 +1,4 @@
-export type RatingsByTrack = {
+export interface RatingsByTrack {
     [key: string]: string;
 };
 
