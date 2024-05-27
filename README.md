@@ -47,6 +47,10 @@ Settings, such as enabling/disabling half star ratings, can be accessed from the
 
 <br>
 
+# Playlist Icons Recommendation
+
+https://github.com/jeroentvb/spicetify-playlist-icons provides a nice view of the playlist icons when you are adding to them manually ![alt text](imgs/example.png)
+
 ## Credits
 
 *Forked from [Duffey's Spicetify Star Ratings](https://github.com/duffey/spicetify-star-ratings) (archived)*
