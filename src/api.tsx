@@ -11,17 +11,14 @@ export function setLocalStorageData(key, value) {
 }
 
 export async function createPlaylist(name, folderUri) {
-    if (navigator.platform.startsWith("Linux") && navigator.userAgent.includes("Spotify/1.1.84.716")) {
-        return await Spicetify.Platform.RootlistAPI.createPlaylist(name, {
-            after: folderUri,
-        });
-    } else {
-        return await Spicetify.Platform.RootlistAPI.createPlaylist(name, {
-            after: {
-                uri: folderUri,
-            },
-        });
-    }
+    const options = navigator.platform.startsWith("Linux") && navigator.userAgent.includes("Spotify/1.1.84.716") 
+        ? { after: folderUri } 
+        : { after: { uri: folderUri } };
+        
+    return await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/users/${Spicetify.User.getUsername()}/playlists`, {
+        name: name,
+        ...options
+    });
 }
 
 export async function makePlaylistPrivate(playlistUri) {
@@ -33,14 +30,8 @@ export async function makePlaylistPrivate(playlistUri) {
 }
 
 export async function createFolder(name: string) {
-    await Spicetify.Platform.RootlistAPI.createFolder(name, { before: "" });
+    await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/me/folders`, { name: name, before: "" });
 }
-
-// export async function getAlbum(uri: string) {
-//     const { queryAlbumTracks } = Spicetify.GraphQL.Definitions;
-//     const res = await Spicetify.GraphQL.Request(queryAlbumTracks, { uri, offset: 0, limit: 450 });
-//     return res.data;
-// }
 
 export async function getAlbum(uri: string) {
     const query = {
@@ -52,41 +43,36 @@ export async function getAlbum(uri: string) {
     return await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}/tracks`, query);
 }
 
-
 export async function getContents() {
-    return await Spicetify.Platform.RootlistAPI.getContents();
+    return await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/me/rootlist`);
 }
 
 export async function addTrackToLikedSongs(trackUri: string) {
-    // check if track is already liked
-    const isLiked = await Spicetify.Platform.LibraryAPI.contains(trackUri);
+    const isLiked = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/me/tracks/contains?ids=${trackUri}`);
     if (isLiked[0]) {
         return;
     }
     
-    // false refers to whether to silently add to liked songs (no notification)
-    await Spicetify.Platform.LibraryAPI.add({uris: [trackUri], silent: 0})
+    await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks`, { ids: [trackUri] });
 }
 
 export async function removeTrackFromLikedSongs(trackUri: string) {
-    // false refers to whether to silently add to liked songs (no notification)
-    await Spicetify.Platform.LibraryAPI.remove({uris: [trackUri], silent: 0})
+    await Spicetify.CosmosAsync.del(`https://api.spotify.com/v1/me/tracks`, { ids: [trackUri] });
 }
 
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
-    await Spicetify.Platform.PlaylistAPI.add(playlistUri, [trackUri], {after: 1, before: 0});
+    await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistUri}/tracks`, { uris: [trackUri], position: 0 });
 }
 
 export async function removeTrackFromPlaylist(playlistUri: string, trackUri: string) {
-    await Spicetify.Platform.PlaylistAPI.remove(playlistUri, [{uri: trackUri, uid: ""}]);
+    await Spicetify.CosmosAsync.del(`https://api.spotify.com/v1/playlists/${playlistUri}/tracks`, { tracks: [{ uri: trackUri }] });
 }
 
 export async function getPlaylistItems(uri: string) {
-    const result = await Spicetify.CosmosAsync.get(`sp://core-playlist/v1/playlist/${uri}`);
+    const result = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/playlists/${uri}/tracks`);
     return result.items;
 }
 
-// TODO: Remove when Linux gets newer release
 export async function isAppLaterThan(specifiedVersion: string) {
     let appInfo = await Spicetify.CosmosAsync.get("sp://desktop/v1/version");
     let result = appInfo.version.localeCompare(specifiedVersion, undefined, { numeric: true, sensitivity: "base" });
@@ -95,18 +81,16 @@ export async function isAppLaterThan(specifiedVersion: string) {
 
 export async function moveTracksBefore(playlistUri: string, trackUids, beforeUid: string) {
     const isV2 = await isAppLaterThan("1.2.5.1006.g22820f93");
-    await Spicetify.Platform.PlaylistAPI.move(
-        playlistUri,
-        trackUids.map((uid) => ({ uid: uid })),
-        { before: isV2 ? { uid: beforeUid } : beforeUid },
-    );
+    await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/playlists/${playlistUri}/tracks`, {
+        uris: trackUids.map((uid) => ({ uid: uid })),
+        before: isV2 ? { uid: beforeUid } : beforeUid
+    });
 }
 
 export async function moveTracksAfter(playlistUri: string, trackUids, afterUid: string) {
     const isV2 = await isAppLaterThan("1.2.5.1006.g22820f93");
-    await Spicetify.Platform.PlaylistAPI.move(
-        playlistUri,
-        trackUids.map((uid) => ({ uid: uid })),
-        { after: isV2 ? { uid: afterUid } : afterUid },
-    );
+    await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/playlists/${playlistUri}/tracks`, {
+        uris: trackUids.map((uid) => ({ uid: uid })),
+        after: isV2 ? { uid: afterUid } : afterUid
+    });
 }
