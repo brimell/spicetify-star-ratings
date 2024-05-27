@@ -21,10 +21,6 @@ export function trackUriToTrackId(trackUri: string): string {
     return trackUri.replace("spotify:track:", "");
 }
 
-export function getNowPlayingHeart() {
-    return document.querySelector(".main-nowPlayingWidget-nowPlaying .control-button-heart");
-}
-
 export const getNowPlayingTrackUri = () => {
     return Spicetify.Player.data.item.uri;
 };

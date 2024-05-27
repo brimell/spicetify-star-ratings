@@ -16,7 +16,7 @@ import {
 } from "./ratings";
 import { PlaylistUris, Ratings } from "./types/store";
 import { tracklistColumnCss } from "./css/css";
-import { getTracklistTrackUri, isAlbumPage, trackUriToTrackId, getNowPlayingHeart, getNowPlayingTrackUri } from "./utils/utils";
+import { getTracklistTrackUri, isAlbumPage, trackUriToTrackId, getNowPlayingTrackUri } from "./utils/utils";
 
 let settings = null;
 
@@ -102,7 +102,7 @@ async function handleSetRating(trackUri: string, oldRating: string | undefined, 
     api.showNotification((oldRating ? "Moved" : "Added") + ` to ${playlistName}`);
 }
 
-function getClickListener(i, ratingOverride, starData, getTrackUri, getHeart) {
+function getClickListener(i, ratingOverride, starData, getTrackUri) {
     return () => {
         if (clickListenerRunning || ratingsLoading || isSorting) return;
         clickListenerRunning = true;
@@ -151,7 +151,7 @@ function getRegisterKeyboardShortcuts(keys) {
                     ctrl: true,
                     alt: true,
                 },
-                getClickListener(0, parseFloat(rating), nowPlayingWidgetStarData, getNowPlayingTrackUri, getNowPlayingHeart),
+                getClickListener(0, parseFloat(rating), nowPlayingWidgetStarData, getNowPlayingTrackUri),
             );
         }
     };
@@ -169,7 +169,7 @@ function getDeregisterKeyboardShortcuts(keys) {
     };
 }
 
-function addStarsListeners(starData, getTrackUri, getHeart) {
+function addStarsListeners(starData, getTrackUri) {
     function getCurrentRating(trackUri: string) {
         return ratings[trackUri] ?? 0.0;
     }
@@ -188,7 +188,7 @@ function addStarsListeners(starData, getTrackUri, getHeart) {
             setRating(starElements, rating);
         });
 
-        star.addEventListener("click", getClickListener(i, null, starData, getTrackUri, getHeart));
+        star.addEventListener("click", getClickListener(i, null, starData, getTrackUri));
     }
 }
 
@@ -358,7 +358,7 @@ async function observerCallback(keys) {
         nowPlayingWidgetStarData[0].style.marginRight = "8px";
         if (settings.nowPlayingStarsPosition === "left") nowPlayingWidget.after(nowPlayingWidgetStarData[0]);
         else nowPlayingWidget.prepend(nowPlayingWidgetStarData[0]);
-        addStarsListeners(nowPlayingWidgetStarData, getNowPlayingTrackUri, getNowPlayingHeart);
+        addStarsListeners(nowPlayingWidgetStarData, getNowPlayingTrackUri);
         updateNowPlayingWidget();
         if (settings.enableKeyboardShortcuts) {
             getRegisterKeyboardShortcuts(keys)();
