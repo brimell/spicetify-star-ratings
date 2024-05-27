@@ -49,8 +49,7 @@ export async function getAlbum(uri: string) {
         limit: 450
     };
 
-    const res = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}/tracks`, query);
-    return res;
+    return await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}/tracks`, query);
 }
 
 
