@@ -381,6 +381,7 @@ async function updateAlbumStars() {
 
     albumId = isAlbumPage();
     albumStarData[0].style.display = albumId ? "flex" : "none";
+    console.log("albumId is:", albumId)
 
     if (!albumId) return;
 
