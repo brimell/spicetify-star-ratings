@@ -36,11 +36,23 @@ export async function createFolder(name: string) {
     await Spicetify.Platform.RootlistAPI.createFolder(name, { before: "" });
 }
 
+// export async function getAlbum(uri: string) {
+//     const { queryAlbumTracks } = Spicetify.GraphQL.Definitions;
+//     const res = await Spicetify.GraphQL.Request(queryAlbumTracks, { uri, offset: 0, limit: 450 });
+//     return res.data;
+// }
+
 export async function getAlbum(uri: string) {
-    const { queryAlbumTracks } = Spicetify.GraphQL.Definitions;
-    const res = await Spicetify.GraphQL.Request(queryAlbumTracks, { uri, offset: 0, limit: 450 });
-    return res.data;
+    const query = {
+        uri,
+        offset: 0,
+        limit: 450
+    };
+
+    const res = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}/tracks`, query);
+    return res;
 }
+
 
 export async function getContents() {
     return await Spicetify.Platform.RootlistAPI.getContents();
