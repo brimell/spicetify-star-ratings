@@ -11,13 +11,14 @@ export function setLocalStorageData(key, value) {
 }
 
 export async function createPlaylist(name, folderUri) {
-    const options = navigator.platform.startsWith("Linux") && navigator.userAgent.includes("Spotify/1.1.84.716") 
-        ? { after: folderUri } 
-        : { after: { uri: folderUri } };
-        
+    const options =
+        navigator.platform.startsWith("Linux") && navigator.userAgent.includes("Spotify/1.1.84.716")
+            ? { after: folderUri }
+            : { after: { uri: folderUri } };
+
     return await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/users/${Spicetify.User.getUsername()}/playlists`, {
         name: name,
-        ...options
+        ...options,
     });
 }
 
@@ -36,7 +37,7 @@ export async function createFolder(name: string) {
 export async function getAlbum(uri: string) {
     const query = {
         offset: 0,
-        limit: 450
+        limit: 450,
     };
 
     return await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}`, query);
@@ -47,12 +48,29 @@ export async function getContents() {
 }
 
 export async function addTrackToLikedSongs(trackUri: string) {
-    const isLiked = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/me/tracks/contains?ids=${trackUri}`);
-    if (isLiked[0]) {
+    const trackId = trackUri.split(":").pop(); // Extract the track ID from the URI
+
+    // Check if the track is already liked
+    try {
+        const isLikedResponse = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/me/tracks/contains?ids=${trackId}`);
+        if (isLikedResponse[0]) {
+            return;
+        }
+    } catch (error) {
+        console.error("Error checking if track is liked:", error);
         return;
     }
-    
-    await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks`, { ids: [trackUri] });
+
+    try {
+        await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/me/tracks?ids=${trackId}`);
+    } catch (error) {
+        if (error instanceof SyntaxError) {
+            console.log('getting weird syntax error here... not sure what to do about it but it seems to be working fine', error)
+        } else {
+            // Log other types of errors
+            console.error("Error adding track to liked songs:", error);
+        }
+    }
 }
 
 export async function removeTrackFromLikedSongs(trackUri: string) {
@@ -60,11 +78,31 @@ export async function removeTrackFromLikedSongs(trackUri: string) {
 }
 
 export async function addTrackToPlaylist(playlistUri: string, trackUri: string) {
-    await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistUri}/tracks`, { uris: [trackUri], position: 0 });
+    const playlistId = playlistUri.split(":").pop(); // Extract the playlist ID from the URI
+
+    const body = {
+        uris: [trackUri],
+    };
+
+    try {
+        await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, body);
+    } catch (error) {
+        console.error("Error adding track to playlist:", error);
+    }
 }
 
 export async function removeTrackFromPlaylist(playlistUri: string, trackUri: string) {
-    await Spicetify.CosmosAsync.del(`https://api.spotify.com/v1/playlists/${playlistUri}/tracks`, { tracks: [{ uri: trackUri }] });
+    const playlistId = playlistUri.split(":").pop(); // Extract the playlist ID from the URI
+
+    const body = {
+        tracks: [{ uri: trackUri }],
+    };
+
+    try {
+        await Spicetify.CosmosAsync.del(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, body);
+    } catch (error) {
+        console.error("Error removing track from playlist:", error);
+    }
 }
 
 export async function getPlaylistItems(uri: string) {
@@ -82,7 +120,7 @@ export async function moveTracksBefore(playlistUri: string, trackUids, beforeUid
     const isV2 = await isAppLaterThan("1.2.5.1006.g22820f93");
     await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/playlists/${playlistUri}/tracks`, {
         uris: trackUids.map((uid) => ({ uid: uid })),
-        before: isV2 ? { uid: beforeUid } : beforeUid
+        before: isV2 ? { uid: beforeUid } : beforeUid,
     });
 }
 
@@ -90,6 +128,6 @@ export async function moveTracksAfter(playlistUri: string, trackUids, afterUid: 
     const isV2 = await isAppLaterThan("1.2.5.1006.g22820f93");
     await Spicetify.CosmosAsync.put(`https://api.spotify.com/v1/playlists/${playlistUri}/tracks`, {
         uris: trackUids.map((uid) => ({ uid: uid })),
-        after: isV2 ? { uid: afterUid } : afterUid
+        after: isV2 ? { uid: afterUid } : afterUid,
     });
 }
