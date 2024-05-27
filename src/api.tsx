@@ -35,16 +35,15 @@ export async function createFolder(name: string) {
 
 export async function getAlbum(uri: string) {
     const query = {
-        uri,
         offset: 0,
         limit: 450
     };
 
-    return await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}/tracks`, query);
+    return await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/albums/${uri}`, query);
 }
 
 export async function getContents() {
-    return await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/me/rootlist`);
+    return await Spicetify.Platform.RootlistAPI.getContents();
 }
 
 export async function addTrackToLikedSongs(trackUri: string) {
@@ -69,7 +68,7 @@ export async function removeTrackFromPlaylist(playlistUri: string, trackUri: str
 }
 
 export async function getPlaylistItems(uri: string) {
-    const result = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/playlists/${uri}/tracks`);
+    const result = await Spicetify.CosmosAsync.get(`sp://core-playlist/v1/playlist/${uri}`);
     return result.items;
 }
 

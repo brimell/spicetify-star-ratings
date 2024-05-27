@@ -385,7 +385,7 @@ async function updateAlbumStars() {
 
     if (!albumId) return;
 
-    album = await api.getAlbum(`spotify:album:${albumId}`);
+    album = await api.getAlbum(albumId);
     updateAlbumRating();
 }
 

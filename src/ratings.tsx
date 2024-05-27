@@ -75,23 +75,30 @@ export function getRatingsByTrack(allPlaylistItems: TracksByRatings): RatingsByT
 
 export function getAlbumRating(ratings: Ratings, album): string {
     console.log("album is:", album);
-    if (!album.albumUnion) return "0.0";
+    if (!album) return "0.0";
 
-    const items = album.albumUnion.tracks.items;
+    const items = album.tracks.items; // Accessing items directly from album object
     let sumRatings = 0.0;
     let numRatings = 0;
+
     for (const item of items) {
-        const rating = parseFloat(ratings[item.track.uri]);
+        const trackUri = item.uri; // Correctly reference the track URI
+        const rating = parseFloat(ratings[trackUri]);
+
         if (!rating) continue;
+
         sumRatings += rating;
         numRatings += 1;
     }
+
     let averageRating = 0.0;
     if (numRatings > 0) averageRating = sumRatings / numRatings;
+
     // Round to nearest 0.5
     averageRating = (Math.round(averageRating * 2) / 2);
     return averageRating.toFixed(1);
 }
+
 
 export async function sortPlaylistByRating(playlistUri: string, ratings: RatingsByTrack) {
     const ratingKeys = ["5.0", "4.5", "4.0", "3.5", "3.0", "2.5", "2.0", "1.5", "1.0", "0.5", "0.0"];
