@@ -50,6 +50,10 @@ let isSorting = false;
 
 const PLAYLIST_SIZE_LIMIT = 8000; // Maximum tracks per playlist
 
+interface PlaylistItems {
+    length: number;
+}
+
 function updateAlbumRating() {
     const averageRating = getAlbumRating(ratings, album);
 
@@ -65,75 +69,85 @@ async function handleRemoveRating(trackUri: string, rating: string) {
 }
 
 async function handleSetRating(trackUri: string, oldRating: string | undefined, newRating: string) {
-    // Update the rating in the ratings object
-    ratings[trackUri] = newRating;
+    try {
+        // Update the rating in the ratings object
+        ratings[trackUri] = newRating;
 
-    // If there was a previous rating, remove the track from the old playlist
-    if (oldRating) {
-        const oldRatingAsString = oldRating;
-        const playlistUri = playlistUris[oldRatingAsString];
-        await api.removeTrackFromPlaylist(playlistUri, trackUri);
-    }
+        // If there was a previous rating, remove the track from the old playlist
+        if (oldRating) {
+            const oldRatingAsString = oldRating;
+            const playlistUri = playlistUris[oldRatingAsString];
+            await api.removeTrackFromPlaylist(playlistUri, trackUri);
+        }
 
-    // Create a 'Rated' folder if it doesn't exist
-    if (!ratedFolderUri) {
-        await api.createFolder("Rated");
-        const contents = await api.getContents();
-        const ratedFolder = findFolderByName(contents, "Rated");
-        ratedFolderUri = ratedFolder.uri;
-        saveRatedFolderUri(ratedFolderUri);
-    }
+        // Create a 'Rated' folder if it doesn't exist
+        if (!ratedFolderUri) {
+            await api.createFolder("Rated");
+            const contents = await api.getContents();
+            const ratedFolder = findFolderByName(contents, "Rated");
+            ratedFolderUri = ratedFolder.uri;
+            saveRatedFolderUri(ratedFolderUri);
+        }
 
-    let playlistUri = playlistUris[newRating];
-    let playlistName = newRating;
+        let playlistUri = playlistUris[newRating];
+        let playlistName = newRating;
 
-    // If no playlist exists for this rating, create the first one
-    if (!playlistUri) {
-        playlistUri = await api.createPlaylist(playlistName, ratedFolderUri);
-        await api.makePlaylistPrivate(playlistUri);
-        playlistUris[newRating] = playlistUri;
-        savePlaylistUris(playlistUris);
-        playlistNames[playlistUri] = playlistName;
-    } else {
-        // Check if current playlist is at capacity
-        const items = await api.getPlaylistItems(playlistUri);
-        if (items.length >= PLAYLIST_SIZE_LIMIT) {
-            // Find the next available suffix number
-            let suffix = 1;
-            let newPlaylistUri;
-            
-            while (true) {
-                try {
-                    const newPlaylistName = `${newRating}(${suffix})`;
-                    newPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
-                    await api.makePlaylistPrivate(newPlaylistUri);
-                    break;
-                } catch (e) {
-                    suffix++;
-                    if (suffix > 100) throw new Error('Unable to create overflow playlist');
-                }
-            }
-
-            // Update playlist mappings
-            playlistUri = newPlaylistUri;
-            playlistUris[newRating] = newPlaylistUri;
+        // If no playlist exists for this rating, create the first one
+        if (!playlistUri) {
+            playlistUri = await api.createPlaylist(playlistName, ratedFolderUri);
+            await api.makePlaylistPrivate(playlistUri);
+            playlistUris[newRating] = playlistUri;
             savePlaylistUris(playlistUris);
-            playlistNames[newPlaylistUri] = `${newRating}(${suffix})`;
+            playlistNames[playlistUri] = playlistName;
+        } else {
+            // Check if current playlist is at capacity
+            const items = await api.getPlaylistItems(playlistUri) as PlaylistItems;
+            
+            if (items.length >= PLAYLIST_SIZE_LIMIT) {
+                // Find the next available suffix number
+                let suffix = 1;
+                let newPlaylistUri;
+                
+                while (true) {
+                    try {
+                        const newPlaylistName = `${newRating}(${suffix})`;
+                        newPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
+                        await api.makePlaylistPrivate(newPlaylistUri);
+                        break;
+                    } catch (e) {
+                        suffix++;
+                        if (suffix > 100) {
+                            throw new Error('Unable to create overflow playlist');
+                        }
+                    }
+                }
+
+                // Update playlist mappings
+                playlistUri = newPlaylistUri;
+                playlistUris[newRating] = newPlaylistUri;
+                savePlaylistUris(playlistUris);
+                playlistNames[newPlaylistUri] = `${newRating}(${suffix})`;
+            }
         }
-    }
 
-    // Add the track to the playlist
-    await api.addTrackToPlaylist(playlistUri, trackUri);
+        // Add the track to the playlist
+        await api.addTrackToPlaylist(playlistUri, trackUri);
 
-    // Show notification
-    const displayName = playlistNames[playlistUri];
-    api.showNotification((oldRating ? "Moved" : "Added") + ` to ${displayName}`);
+        // Show notification
+        const displayName = playlistNames[playlistUri];
+        api.showNotification((oldRating ? "Moved" : "Added") + ` to ${displayName}`);
 
-    // Handle liking if above threshold
-    if (settings.likeThreshold !== "disabled") {
-        if (newRating >= parseFloat(settings.likeThreshold)) {
-            api.addTrackToLikedSongs(trackUri);
+        // Handle liking if above threshold
+        if (settings.likeThreshold !== "disabled") {
+            const threshold = parseFloat(settings.likeThreshold);
+            const ratingValue = parseFloat(newRating);
+            if (ratingValue >= threshold) {
+                await api.addTrackToLikedSongs(trackUri);
+            }
         }
+    } catch (error) {
+        console.error('Error in handleSetRating:', error);
+        api.showNotification('Error updating rating: ' + (error.message || 'Unknown error'));
     }
 }
 
