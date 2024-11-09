@@ -48,7 +48,7 @@ let clickListenerRunning = false;
 let ratingsLoading = false;
 let isSorting = false;
 
-const PLAYLIST_SIZE_LIMIT = 8000; // Maximum tracks per playlist
+const PLAYLIST_SIZE_LIMIT = 731; // Maximum tracks per playlist
 
 interface PlaylistItems {
     length: number;
@@ -104,29 +104,26 @@ async function handleSetRating(trackUri: string, oldRating: string | undefined, 
             const items = await api.getPlaylistItems(playlistUri) as PlaylistItems;
             
             if (items.length >= PLAYLIST_SIZE_LIMIT) {
-                // Find the next available suffix number
                 let suffix = 1;
                 let newPlaylistUri;
                 
-                while (true) {
+                while (suffix <= 2) {
                     try {
                         const newPlaylistName = `${newRating}(${suffix})`;
                         newPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
-                        await api.makePlaylistPrivate(newPlaylistUri);
+                        
+                        playlistUri = newPlaylistUri;
+                        playlistUris[`${newRating}(${suffix})`] = newPlaylistUri;
+                        savePlaylistUris(playlistUris);
+                        playlistNames[newPlaylistUri] = `${newRating}(${suffix})`;
                         break;
                     } catch (e) {
                         suffix++;
                         if (suffix > 100) {
-                            throw new Error('Unable to create overflow playlist');
+                            throw new Error('Unable to create overflow playlist after 100 attempts');
                         }
                     }
                 }
-
-                // Update playlist mappings
-                playlistUri = newPlaylistUri;
-                playlistUris[newRating] = newPlaylistUri;
-                savePlaylistUris(playlistUris);
-                playlistNames[newPlaylistUri] = `${newRating}(${suffix})`;
             }
         }
 
