@@ -48,6 +48,8 @@ let clickListenerRunning = false;
 let ratingsLoading = false;
 let isSorting = false;
 
+const PLAYLIST_SIZE_LIMIT = 8000; // Maximum tracks per playlist
+
 function updateAlbumRating() {
     const averageRating = getAlbumRating(ratings, album);
 
@@ -82,24 +84,57 @@ async function handleSetRating(trackUri: string, oldRating: string | undefined, 
         saveRatedFolderUri(ratedFolderUri);
     }
 
-    // Convert the new rating to string format with one decimal place
     let playlistUri = playlistUris[newRating];
+    let playlistName = newRating;
 
-    // If the Rated playlist for the new rating doesn't exist, create it
+    // If no playlist exists for this rating, create the first one
     if (!playlistUri) {
-        playlistUri = await api.createPlaylist(newRating, ratedFolderUri);
+        playlistUri = await api.createPlaylist(playlistName, ratedFolderUri);
         await api.makePlaylistPrivate(playlistUri);
         playlistUris[newRating] = playlistUri;
         savePlaylistUris(playlistUris);
-        playlistNames[playlistUri] = newRating;
+        playlistNames[playlistUri] = playlistName;
+    } else {
+        // Check if current playlist is at capacity
+        const items = await api.getPlaylistItems(playlistUri);
+        if (items.length >= PLAYLIST_SIZE_LIMIT) {
+            // Find the next available suffix number
+            let suffix = 1;
+            let newPlaylistUri;
+            
+            while (true) {
+                try {
+                    const newPlaylistName = `${newRating}(${suffix})`;
+                    newPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
+                    await api.makePlaylistPrivate(newPlaylistUri);
+                    break;
+                } catch (e) {
+                    suffix++;
+                    if (suffix > 100) throw new Error('Unable to create overflow playlist');
+                }
+            }
+
+            // Update playlist mappings
+            playlistUri = newPlaylistUri;
+            playlistUris[newRating] = newPlaylistUri;
+            savePlaylistUris(playlistUris);
+            playlistNames[newPlaylistUri] = `${newRating}(${suffix})`;
+        }
     }
 
-    // Add the track to the playlist for the new rating
+    // Add the track to the playlist
     await api.addTrackToPlaylist(playlistUri, trackUri);
 
-    // Get the name of the playlist and show a notification indicating the action
-    const playlistName = playlistNames[playlistUri];
-    api.showNotification((oldRating ? "Moved" : "Added") + ` to ${playlistName}`);
+    // Show notification
+    const displayName = playlistNames[playlistUri];
+    api.showNotification((oldRating ? "Moved" : "Added") + ` to ${displayName}`);
+
+    // Handle liking if above threshold
+    if (settings.likeThreshold !== "disabled") {
+        if (newRating >= parseFloat(settings.likeThreshold)) {
+            api.addTrackToLikedSongs(trackUri);
+        }
+    }
 }
 
 function getClickListener(i, ratingOverride, starData, getTrackUri) {

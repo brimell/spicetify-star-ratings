@@ -80,6 +80,7 @@ export function setRating(starElements: (SVGSVGElement | SVGStopElement)[][], ra
         const stopFirst = starElements[i][1];
         const stopSecond = starElements[i][2];
         stopFirst.setAttributeNS(null, "stop-color", "var(--spice-button-disabled)");
+
         stopSecond.setAttributeNS(null, "stop-color", "var(--spice-button-disabled)");
     }
     for (let i = 0; i < halfStars; i++) {
