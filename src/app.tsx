@@ -107,15 +107,19 @@ async function handleSetRating(trackUri: string, oldRating: string | undefined, 
                 let suffix = 1;
                 let newPlaylistUri;
                 
-                while (suffix <= 2) {
+                while (suffix <= 100) {
                     try {
                         const newPlaylistName = `${newRating}(${suffix})`;
-                        newPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
+                        newPlaylistUri = await api.createPlaylist(newPlaylistName);
                         
                         playlistUri = newPlaylistUri;
                         playlistUris[`${newRating}(${suffix})`] = newPlaylistUri;
                         savePlaylistUris(playlistUris);
                         playlistNames[newPlaylistUri] = `${newRating}(${suffix})`;
+
+                        api.showNotification(
+                            `Please move playlist "${newPlaylistName}" to your "Rated" folder manually - the previous playlist reached its limit.`,
+                        );
                         break;
                     } catch (e) {
                         suffix++;

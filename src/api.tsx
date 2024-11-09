@@ -10,9 +10,8 @@ export function setLocalStorageData(key, value) {
     Spicetify.LocalStorage.set(key, value);
 }
 
-export async function createPlaylist(name: string, folderUri: string, description?: string) {
+export async function createPlaylist(name: string, description?: string) {
     try {
-        // Create the playlist
         const response = await Spicetify.CosmosAsync.post(
             `https://api.spotify.com/v1/users/${Spicetify.Platform.username}/playlists`,
             {
@@ -20,23 +19,6 @@ export async function createPlaylist(name: string, folderUri: string, descriptio
                 ...(description && { description })
             }
         );
-
-        // Wait for playlist creation
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // Move to folder after creation if folderUri is provided
-        console.log(response.uri, folderUri);
-        if (folderUri) {
-            await Spicetify.CosmosAsync.post(
-                'sp://core-playlist/v1/rootlist',
-                {
-                    operation: 'move',
-                    uris: [response.uri],
-                    after: folderUri
-                }
-            );
-        }
-
         return response.uri;
     } catch (error) {
         console.error('Error creating playlist:', error);
