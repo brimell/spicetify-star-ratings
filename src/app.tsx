@@ -700,7 +700,8 @@ async function observerCallback(keys) {
     // Add weighted shuffle button to player controls
     const shuffleButton =
         document.querySelector('[data-testid="control-button-shuffle"]') || document.querySelector('button[aria-label*="Shuffle" i]');
-    if (shuffleButton && !shuffleButton.nextElementSibling?.classList.contains("weighted-shuffle-button")) {
+
+    if (shuffleButton && !document.querySelector(".weighted-shuffle-button")) {
         const weightedShuffleButton = document.createElement("button");
         weightedShuffleButton.className = "weighted-shuffle-button";
         weightedShuffleButton.style.cssText = `

@@ -92,7 +92,7 @@ export async function removeTrackFromPlaylist(playlistUri: string, trackUri: str
 }
 
 export async function getPlaylistItems(uri: string) {
-    const result = await Spicetify.CosmosAsync.get(`sp://core-playlist/v1/playlist/${uri}`);
+    const result = await getPlaylistAPI().getContents(uri);
     return result.items;
 }
 
