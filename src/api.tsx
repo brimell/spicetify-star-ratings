@@ -172,8 +172,5 @@ export async function getPlaylist(playlistUri: string) {
 }
 
 export async function addTracksToPlaylist(playlistUri: string, trackUris: string[]) {
-    const playlistId = playlistUri.split(":").pop();
-    await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`, {
-        uris: trackUris,
-    });
+    await getPlaylistAPI().add(playlistUri, trackUris, { after: 1, before: 0 });
 }

@@ -237,8 +237,8 @@ async function createWeightedShufflePlaylist(originalPlaylistUri: string, trackC
 
         // Calculate weights for all tracks
         const tracksWithWeights = tracks.map((track) => ({
-            uri: track.link,
-            weight: getTrackWeight(track.link),
+            uri: track.link ?? track.uri,
+            weight: getTrackWeight(track.link ?? track.uri),
         }));
 
         // Filter out tracks with zero weight (unlikely but possible)
