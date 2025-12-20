@@ -15,7 +15,7 @@ import {
     getAlbumRating,
     sortPlaylistByRating,
 } from "./ratings";
-import { PlaylistUris, Ratings } from "./types/store";
+import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
 import { tracklistColumnCss } from "./css/css";
 import { getTracklistTrackUri, isAlbumPage, trackUriToTrackId, getNowPlayingTrackUri } from "./utils/utils";
 
@@ -57,10 +57,38 @@ interface PlaylistItems {
     length: number;
 }
 
-function getTrackWeight(trackUri: string): number {
+export function getTrackRating(trackUri: string): number | null {
     const rating = ratings[trackUri];
-    return rating ? parseFloat(rating) : parseFloat(settings.defaultRating);
+
+    if (rating) {
+        // Time-weighted average with half-life of 6 months
+        const HALF_LIFE_MS = 6 * (365.25 / 12) * 24 * 60 * 60 * 1000;
+
+        let weightedSum = 0;
+        let weightSum = 0;
+
+        for (const [valueStr, date] of rating) {
+            const value = parseFloat(valueStr);
+
+            const deltaMs = new Date().getTime() - date.getTime();
+
+            const weight = Math.pow(0.5, deltaMs / HALF_LIFE_MS);
+
+            weightedSum += value * weight;
+            weightSum += weight;
+        }
+
+        return weightedSum / weightSum;
+    } else {
+        return null;
+    }
 }
+
+export function getTrackRatingOrDefault(trackUri: string): number {
+    return getTrackRating(trackUri) ?? parseFloat(settings.defaultRating);
+}
+
+// --- weighted playback ---
 
 function selectWeightedRandomTrack(): Promise<string | null> {
     return new Promise(async (resolve) => {
@@ -113,7 +141,7 @@ function selectWeightedRandomTrack(): Promise<string | null> {
             }
 
             // Calculate weights and perform weighted random selection
-            const weights = eligibleTracks.map((track) => getTrackWeight(track.link));
+            const weights = eligibleTracks.map((track) => getTrackRatingOrDefault(track.link));
             const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
 
             if (totalWeight <= 0) {
@@ -204,6 +232,8 @@ async function weightedLoop() {
     }
 }
 
+// --- weighted playlist ---
+
 async function createWeightedShufflePlaylist(originalPlaylistUri: string, trackCount: number): Promise<any> {
     try {
         // Get the original playlist name
@@ -238,7 +268,7 @@ async function createWeightedShufflePlaylist(originalPlaylistUri: string, trackC
         // Calculate weights for all tracks
         const tracksWithWeights = tracks.map((track) => ({
             uri: track.link ?? track.uri,
-            weight: getTrackWeight(track.link ?? track.uri),
+            weight: getTrackRatingOrDefault(track.link ?? track.uri),
         }));
 
         // Filter out tracks with zero weight (unlikely but possible)
@@ -309,15 +339,23 @@ async function handleRemoveRating(trackUri: string, rating: string) {
     api.showNotification(`Removed from ${playlistName}`);
 }
 
-async function handleSetRating(trackUri: string, oldRating: string | undefined, newRating: string, allowLike: boolean = true) {
+async function handleSetRating(trackUri: string, oldRating: TimestampedRating[] | undefined, newRating: string, allowLike: boolean = true) {
     try {
+        // safeguard
+        if (!settings.averageRatings && ratings[trackUri].length > 1) {
+            return;
+        }
+
         // Update the rating in the ratings object
-        ratings[trackUri] = newRating;
+        if (settings.averageRatings) {
+            ratings[trackUri].push([newRating, new Date()]);
+        } else {
+            ratings[trackUri][0] = [newRating, new Date()];
+        }
 
         // If there was a previous rating, remove the track from the old playlist
-        if (oldRating) {
-            const oldRatingAsString = oldRating;
-            const playlistUri = playlistUris[oldRatingAsString];
+        if (oldRating && !settings.averageRatings) {
+            const playlistUri = playlistUris[oldRating[0][0]];
             await api.removeTrackFromPlaylist(playlistUri, trackUri);
         }
 
@@ -405,25 +443,30 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
         let promise = null;
         let displayRating = null;
 
-        if (oldRating === newRating) {
-            displayRating = 0.0;
-            promise = handleRemoveRating(trackUri, newRating);
+        const same_rating = settings.averageRatings
+            ? oldRating.filter((rating) => Date.now() - rating[1].getTime() <= 5 * 60 * 1000).some((rating) => rating[0] === newRating)
+            : oldRating[0][0] === newRating;
+        if (same_rating) {
+            if (!settings.averageRatings) {
+                displayRating = 0.0;
+                promise = handleRemoveRating(trackUri, newRating);
 
-            // If sync duplicate songs is enabled, remove the rating from all tracks with the same ISRC
-            if (settings.syncDuplicateSongs) {
-                (async () => {
-                    try {
-                        const tracksWithSameISRC = await api.getTracksWithSameISRC(trackUri.substring(14));
-                        for (const track of tracksWithSameISRC) {
-                            const trackUri = track.uri;
-                            if (trackUri in ratings) {
-                                await handleRemoveRating(trackUri, ratings[trackUri]);
+                // If sync duplicate songs is enabled, remove the rating from all tracks with the same ISRC
+                if (settings.syncDuplicateSongs) {
+                    (async () => {
+                        try {
+                            const tracksWithSameISRC = await api.getTracksWithSameISRC(trackUri.substring(14));
+                            for (const track of tracksWithSameISRC) {
+                                const trackUri = track.uri;
+                                if (trackUri in ratings) {
+                                    await handleRemoveRating(trackUri, ratings[trackUri]);
+                                }
                             }
+                        } catch (error) {
+                            console.error(error);
                         }
-                    } catch (error) {
-                        console.error(error);
-                    }
-                })();
+                    })();
+                }
             }
         } else {
             displayRating = newRating;
@@ -450,11 +493,11 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
             }
         }
 
-        promise.finally(() => {
+        promise?.finally(() => {
             let tracklistStarData = findStars(trackUriToTrackId(trackUri));
             if (tracklistStarData) {
                 setRating(tracklistStarData[1], displayRating);
-                tracklistStarData[0].style.visibility = oldRating === newRating ? "hidden" : "visible";
+                tracklistStarData[0].style.visibility = !settings.averageRatings && oldRating[0][0] === newRating ? "hidden" : "visible";
             }
 
             updateNowPlayingWidget();
@@ -493,7 +536,7 @@ function getDeregisterKeyboardShortcuts(keys) {
 
 function addStarsListeners(starData, getTrackUri) {
     function getCurrentRating(trackUri: string) {
-        return ratings[trackUri] ?? 0.0;
+        return getTrackRating(trackUri) ?? 0.0;
     }
 
     const [stars, starElements] = starData;
@@ -623,7 +666,7 @@ function createStarsForTracklists(tracklists: HTMLCollectionOf<Element>) {
             const starData = createStars(trackUriToTrackId(trackUri), 16);
             const stars = starData[0];
             const starElements = starData[1];
-            const currentRating = ratings[trackUri] ?? 0.0;
+            const currentRating = getTrackRating(trackUri) ?? 0.0;
 
             // Append stars to rating column and set listeners
             ratingColumn.appendChild(stars);
@@ -765,7 +808,7 @@ function updateNowPlayingWidget() {
 
     nowPlayingWidgetStarData[0].style.display = isTrack ? "flex" : "none";
 
-    const currentRating = ratings[trackUri] ?? 0.0;
+    const currentRating = getTrackRating(trackUri) ?? 0.0;
     setRating(nowPlayingWidgetStarData[1], currentRating);
 }
 
@@ -880,7 +923,7 @@ async function main() {
 
     Spicetify.Player.addEventListener("songchange", () => {
         const trackUri = Spicetify.Player.data.item.uri;
-        if (trackUri in ratings && settings.skipThreshold !== "disabled" && ratings[trackUri] <= parseFloat(settings.skipThreshold)) {
+        if (trackUri in ratings && settings.skipThreshold !== "disabled" && (getTrackRating(trackUri) ?? 0.0) <= parseFloat(settings.skipThreshold)) {
             Spicetify.Player.next();
             return;
         }

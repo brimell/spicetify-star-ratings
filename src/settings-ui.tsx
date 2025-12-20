@@ -195,6 +195,17 @@ export function Settings({
                 }
                 field="reEnqueueWorkaround"
             />
+            <CheckboxItem
+                settings={settings}
+                name={
+                    <>
+                        Average Ratings
+                        <br />
+                        Record all ratings (instead of only latest). Uses a time-weighted average for the canonical rating.
+                    </>
+                }
+                field="averageRatings"
+            />
             <Heading value="Keyboard Shortcuts" />
             <ul>
                 <KeyboardShortcutDescription label="Rate current track 0.5 stars" numberKey="1" />

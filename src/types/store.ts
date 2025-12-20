@@ -1,7 +1,3 @@
-export interface RatingsByTrack {
-    [key: string]: string;
-};
-
 export type TracksByRatings = {
     [key: string]: Track[];
 };
@@ -9,8 +5,9 @@ export type TracksByRatings = {
 export interface PlaylistUris {
     [key: string]: string;
 }
+export type TimestampedRating = [string, Date];
 export interface Ratings {
-    [key: string]: string;
+    [key: string]: TimestampedRating[];
 }
 export type Track = {
     hasLyrics: boolean;
@@ -66,6 +63,7 @@ export type Track = {
         image: string;
         thumbnail: string;
     };
+    addedAt: string;
     displayCovers: {
         default: string;
         small: string;

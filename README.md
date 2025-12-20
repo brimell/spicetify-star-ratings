@@ -31,6 +31,11 @@ Settings, such as enabling/disabling half star ratings, can be accessed from the
 - Contains N random items from the original Playlist, weighted by their ratings.
 - Can be used as an 'offline' weighted playback.
 
+## Average Ratings
+Enables the following changes:
+- Rating a song does not overwrite the old rating, but record it as a new rating
+- The canonical rating of a song is a time-weighted average over all ratings
+
 ## Star Rating Playlist Images
 
 <table>

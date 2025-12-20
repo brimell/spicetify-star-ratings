@@ -15,6 +15,7 @@ export interface Settings {
     syncDuplicateSongs: boolean;
     defaultRating: HalfIncrementRating;
     reEnqueueWorkaround: boolean;
+    averageRatings: boolean;
 }
 
 const defaultSettings: Settings = {
@@ -27,6 +28,7 @@ const defaultSettings: Settings = {
     syncDuplicateSongs: false,
     defaultRating: "2.5",
     reEnqueueWorkaround: false,
+    averageRatings: false,
 };
 
 export function getSettings(): Settings {
