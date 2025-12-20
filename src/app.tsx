@@ -67,10 +67,10 @@ export function getTrackRating(trackUri: string): number | null {
         let weightedSum = 0;
         let weightSum = 0;
 
-        for (const [valueStr, date] of rating) {
+        for (const { rating: valueStr, time } of rating) {
             const value = parseFloat(valueStr);
 
-            const deltaMs = new Date().getTime() - date.getTime();
+            const deltaMs = new Date().getTime() - time.getTime();
 
             const weight = Math.pow(0.5, deltaMs / HALF_LIFE_MS);
 
@@ -331,31 +331,24 @@ function updateAlbumRating() {
     setRating(albumStarData[1], averageRating);
 }
 
-async function handleRemoveRating(trackUri: string, rating: string) {
+async function handleRemoveRating(trackUri: string, rating: string, uid?: string) {
     delete ratings[trackUri];
     const playlistUri = playlistUris[rating];
     const playlistName = playlistNames[playlistUri];
-    await api.removeTrackFromPlaylist(playlistUri, trackUri);
+    await api.removeTrackFromPlaylist(playlistUri, trackUri, uid);
     api.showNotification(`Removed from ${playlistName}`);
 }
 
 async function handleSetRating(trackUri: string, oldRating: TimestampedRating[] | undefined, newRating: string, allowLike: boolean = true) {
     try {
         // safeguard
-        if (!settings.averageRatings && ratings[trackUri].length > 1) {
+        if (!settings.averageRatings && ratings[trackUri]?.length > 1) {
             return;
-        }
-
-        // Update the rating in the ratings object
-        if (settings.averageRatings) {
-            ratings[trackUri].push([newRating, new Date()]);
-        } else {
-            ratings[trackUri][0] = [newRating, new Date()];
         }
 
         // If there was a previous rating, remove the track from the old playlist
         if (oldRating && !settings.averageRatings) {
-            const playlistUri = playlistUris[oldRating[0][0]];
+            const playlistUri = playlistUris[oldRating[0].rating];
             await api.removeTrackFromPlaylist(playlistUri, trackUri);
         }
 
@@ -412,6 +405,10 @@ async function handleSetRating(trackUri: string, oldRating: TimestampedRating[] 
         // Add the track to the playlist
         await api.addTrackToPlaylist(playlistUri, trackUri);
 
+        // re-fetch ratings to include the newest one and its uid
+        const allPlaylistItems = await getAllPlaylistItems(playlistUris);
+        ratings = getRatingsByTrack(allPlaylistItems);
+
         // Show notification
         const displayName = playlistNames[playlistUri];
         api.showNotification((oldRating ? "Moved" : "Added") + ` to ${displayName}`);
@@ -444,8 +441,8 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
         let displayRating = null;
 
         const same_rating = settings.averageRatings
-            ? oldRating.filter((rating) => Date.now() - rating[1].getTime() <= 5 * 60 * 1000).some((rating) => rating[0] === newRating)
-            : oldRating[0][0] === newRating;
+            ? oldRating?.filter((rating) => Date.now() - rating.time.getTime() <= 5 * 60 * 1000).some((rating) => rating.rating === newRating)
+            : oldRating[0].rating === newRating;
         if (same_rating) {
             if (!settings.averageRatings) {
                 displayRating = 0.0;
@@ -459,7 +456,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
                             for (const track of tracksWithSameISRC) {
                                 const trackUri = track.uri;
                                 if (trackUri in ratings) {
-                                    await handleRemoveRating(trackUri, ratings[trackUri]);
+                                    await handleRemoveRating(trackUri, newRating);
                                 }
                             }
                         } catch (error) {
@@ -474,7 +471,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
 
             // Like the track if it's rated above the like threshold
             if (settings.likeThreshold !== "disabled") {
-                if (newRating >= parseFloat(settings.likeThreshold)) api.addTrackToLikedSongs(trackUri);
+                if (parseFloat(newRating) >= parseFloat(settings.likeThreshold)) api.addTrackToLikedSongs(trackUri);
             }
 
             // If sync duplicate songs is enabled, set the rating for all tracks with the same ISRC
@@ -484,7 +481,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
                         const tracksWithSameISRC = await api.getTracksWithSameISRC(trackUri.substring(14));
                         for (const track of tracksWithSameISRC) {
                             const trackUri = track.uri;
-                            await handleSetRating(trackUri, ratings[trackUri], newRating, false);
+                            await handleSetRating(trackUri, oldRating, newRating, false);
                         }
                     } catch (error) {
                         console.error(error);
@@ -497,7 +494,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
             let tracklistStarData = findStars(trackUriToTrackId(trackUri));
             if (tracklistStarData) {
                 setRating(tracklistStarData[1], displayRating);
-                tracklistStarData[0].style.visibility = !settings.averageRatings && oldRating[0][0] === newRating ? "hidden" : "visible";
+                tracklistStarData[0].style.visibility = !settings.averageRatings && oldRating[0].rating === newRating ? "hidden" : "visible";
             }
 
             updateNowPlayingWidget();

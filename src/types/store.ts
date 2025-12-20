@@ -5,7 +5,7 @@ export type TracksByRatings = {
 export interface PlaylistUris {
     [key: string]: string;
 }
-export type TimestampedRating = [string, Date];
+export type TimestampedRating = { rating: string; time: Date; uid: string; };
 export interface Ratings {
     [key: string]: TimestampedRating[];
 }
@@ -70,4 +70,5 @@ export type Track = {
         large: string;
         xlarge: string;
     };
+    uid: string;
 };

@@ -1,12 +1,12 @@
-export function showNotification(text) {
+export function showNotification(text: string) {
     Spicetify.showNotification(text);
 }
 
-export function getLocalStorageData(key) {
+export function getLocalStorageData(key: string) {
     return Spicetify.LocalStorage.get(key);
 }
 
-export function setLocalStorageData(key, value) {
+export function setLocalStorageData(key: string, value: string) {
     Spicetify.LocalStorage.set(key, value);
 }
 
@@ -28,7 +28,7 @@ function getPlaylistAPI() {
     return Spicetify.Platform.PlaylistAPI ?? playlistFromRegistry?.instance;
 }
 
-export async function createPlaylist(name, folderUri) {
+export async function createPlaylist(name: string, folderUri: string) {
     const options =
         navigator.platform.startsWith("Linux") && navigator.userAgent.includes("Spotify/1.1.84.716")
             ? { after: folderUri }
@@ -42,7 +42,7 @@ export async function createPlaylist(name, folderUri) {
     });
 }
 
-export async function makePlaylistPrivate(playlistUri) {
+export async function makePlaylistPrivate(playlistUri: string) {
     setTimeout(async () => {
         await Spicetify.CosmosAsync.post(`sp://core-playlist/v1/playlist/${playlistUri}/set-base-permission`, {
             permission_level: "BLOCKED",
@@ -87,8 +87,8 @@ export async function addTrackToPlaylist(playlistUri: string, trackUri: string) 
     await getPlaylistAPI().add(playlistUri, [trackUri], { after: 1, before: 0 });
 }
 
-export async function removeTrackFromPlaylist(playlistUri: string, trackUri: string) {
-    await getPlaylistAPI().remove(playlistUri, [{ uri: trackUri, uid: "" }]);
+export async function removeTrackFromPlaylist(playlistUri: string, trackUri: string, uid?: string) {
+    await getPlaylistAPI().remove(playlistUri, [{ uri: trackUri, uid: uid ?? "" }]);
 }
 
 export async function getPlaylistItems(uri: string) {
@@ -102,7 +102,7 @@ export async function isAppLaterThan(specifiedVersion: string) {
     return result === 1;
 }
 
-export async function moveTracksBefore(playlistUri: string, trackUids, beforeUid: string) {
+export async function moveTracksBefore(playlistUri: string, trackUids: string[], beforeUid: string) {
     const isV2 = await isAppLaterThan("1.2.5.1006.g22820f93");
     await getPlaylistAPI().move(
         playlistUri,
@@ -111,7 +111,7 @@ export async function moveTracksBefore(playlistUri: string, trackUids, beforeUid
     );
 }
 
-export async function moveTracksAfter(playlistUri: string, trackUids, afterUid: string) {
+export async function moveTracksAfter(playlistUri: string, trackUids: string[], afterUid: string) {
     const isV2 = await isAppLaterThan("1.2.5.1006.g22820f93");
     await getPlaylistAPI().move(
         playlistUri,

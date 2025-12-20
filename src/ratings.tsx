@@ -67,7 +67,7 @@ export function getRatingsByTrack(allPlaylistItems: TracksByRatings): RatingsByT
     for (const [rating, tracks] of Object.entries(allPlaylistItems)) {
         for (const track of tracks) {
             const trackUri = track.link ?? track.uri;
-            const entry: TimestampedRating = [rating, new Date(track.addedAt)];
+            const entry: TimestampedRating = { rating, time: new Date(track.addedAt), uid: track.uid };
 
             if (!ratings[trackUri]) {
                 ratings[trackUri] = [entry];
