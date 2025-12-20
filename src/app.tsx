@@ -1,7 +1,7 @@
 import * as api from "./api";
 import { createStars, setRating, getMouseoverRating, findStars } from "./stars";
-import { getSettings, saveSettings, getPlaylistUris, savePlaylistUris, getRatedFolderUri, saveRatedFolderUri } from "./settings";
-import { Settings } from "./settings-ui";
+import { Settings, getSettings, saveSettings, getPlaylistUris, savePlaylistUris, getRatedFolderUri, saveRatedFolderUri } from "./settings";
+import { Settings as SettingsUi } from "./settings-ui";
 import { SortModal } from "./sort-modal";
 import { WeightedPlaylistModal } from "./weighted-playlist-modal";
 import {
@@ -19,7 +19,7 @@ import { PlaylistUris, Ratings } from "./types/store";
 import { tracklistColumnCss } from "./css/css";
 import { getTracklistTrackUri, isAlbumPage, trackUriToTrackId, getNowPlayingTrackUri } from "./utils/utils";
 
-let settings = null;
+let settings: Settings | null = null;
 
 let ratedFolderUri: string | null = null;
 let ratings: Ratings = {};
@@ -862,7 +862,7 @@ async function main() {
     new Spicetify.Menu.Item("Star Ratings", true, () => {
         Spicetify.PopupModal.display({
             title: "Star Ratings",
-            content: Settings({
+            content: SettingsUi({
                 settings,
                 registerKeyboardShortcuts,
                 deregisterKeyboardShortcuts,
