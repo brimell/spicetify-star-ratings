@@ -332,26 +332,19 @@ function updateAlbumRating() {
 }
 
 async function handleRemoveRating(trackUri: string, rating: string, uid?: string) {
-    delete ratings[trackUri];
     const playlistUri = playlistUris[rating];
     const playlistName = playlistNames[playlistUri];
     await api.removeTrackFromPlaylist(playlistUri, trackUri, uid);
+
+    // re-fetch ratings to include the newest one and its uid
+    const allPlaylistItems = await getAllPlaylistItems(playlistUris);
+    ratings = getRatingsByTrack(allPlaylistItems);
+
     api.showNotification(`Removed from ${playlistName}`);
 }
 
-async function handleSetRating(trackUri: string, oldRating: TimestampedRating[] | undefined, newRating: string, allowLike: boolean = true) {
+async function handleAddRating(trackUri: string, newRating: string) {
     try {
-        // safeguard
-        if (!settings.averageRatings && ratings[trackUri]?.length > 1) {
-            return;
-        }
-
-        // If there was a previous rating, remove the track from the old playlist
-        if (oldRating && !settings.averageRatings) {
-            const playlistUri = playlistUris[oldRating[0].rating];
-            await api.removeTrackFromPlaylist(playlistUri, trackUri);
-        }
-
         // Create a 'Rated' folder if it doesn't exist
         if (!ratedFolderUri) {
             await api.createFolder("Rated");
@@ -411,18 +404,9 @@ async function handleSetRating(trackUri: string, oldRating: TimestampedRating[] 
 
         // Show notification
         const displayName = playlistNames[playlistUri];
-        api.showNotification((oldRating ? "Moved" : "Added") + ` to ${displayName}`);
-
-        // Handle liking if above threshold
-        if (settings.likeThreshold !== "disabled" && allowLike) {
-            const threshold = parseFloat(settings.likeThreshold);
-            const ratingValue = parseFloat(newRating);
-            if (ratingValue >= threshold) {
-                await api.addTrackToLikedSongs(trackUri);
-            }
-        }
+        api.showNotification(`Added to ${displayName}`);
     } catch (error) {
-        console.error("Error in handleSetRating:", error);
+        console.error("Error in handleAddRating:", error);
         api.showNotification("Error updating rating: " + (error.message || "Unknown error"));
     }
 }
@@ -440,38 +424,39 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
         let promise = null;
         let displayRating = null;
 
-        const same_rating = settings.averageRatings
-            ? oldRating?.filter((rating) => Date.now() - rating.time.getTime() <= 5 * 60 * 1000).some((rating) => rating.rating === newRating)
-            : oldRating[0].rating === newRating;
-        if (same_rating) {
-            if (!settings.averageRatings) {
-                displayRating = 0.0;
-                promise = handleRemoveRating(trackUri, newRating);
+        const FIVE_MIN = 5 * 60 * 1000;
 
-                // If sync duplicate songs is enabled, remove the rating from all tracks with the same ISRC
-                if (settings.syncDuplicateSongs) {
-                    (async () => {
-                        try {
-                            const tracksWithSameISRC = await api.getTracksWithSameISRC(trackUri.substring(14));
-                            for (const track of tracksWithSameISRC) {
-                                const trackUri = track.uri;
-                                if (trackUri in ratings) {
-                                    await handleRemoveRating(trackUri, newRating);
-                                }
+        const old = settings.averageRatings ? oldRating?.find((r) => Date.now() - r.time.getTime() <= FIVE_MIN) : oldRating?.[0];
+
+        // remove old rating
+        if (old) {
+            promise = handleRemoveRating(trackUri, old.rating, old.uid);
+
+            // If sync duplicate songs is enabled, remove the rating from all tracks with the same ISRC
+            if (settings.syncDuplicateSongs) {
+                (async () => {
+                    try {
+                        const tracksWithSameISRC = await api.getTracksWithSameISRC(trackUri.substring(14));
+                        for (const track of tracksWithSameISRC) {
+                            const trackUri = track.uri;
+                            if (trackUri in ratings) {
+                                await handleRemoveRating(trackUri, newRating);
                             }
-                        } catch (error) {
-                            console.error(error);
                         }
-                    })();
-                }
+                    } catch (error) {
+                        console.error(error);
+                    }
+                })();
             }
-        } else {
-            displayRating = newRating;
-            promise = handleSetRating(trackUri, oldRating, newRating);
+        }
+
+        // add new rating
+        if (!old || old.rating !== newRating) {
+            promise = handleAddRating(trackUri, newRating);
 
             // Like the track if it's rated above the like threshold
-            if (settings.likeThreshold !== "disabled") {
-                if (parseFloat(newRating) >= parseFloat(settings.likeThreshold)) api.addTrackToLikedSongs(trackUri);
+            if (settings.likeThreshold !== "disabled" && parseFloat(newRating) >= parseFloat(settings.likeThreshold)) {
+                api.addTrackToLikedSongs(trackUri);
             }
 
             // If sync duplicate songs is enabled, set the rating for all tracks with the same ISRC
@@ -481,7 +466,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
                         const tracksWithSameISRC = await api.getTracksWithSameISRC(trackUri.substring(14));
                         for (const track of tracksWithSameISRC) {
                             const trackUri = track.uri;
-                            await handleSetRating(trackUri, oldRating, newRating, false);
+                            await handleAddRating(trackUri, newRating);
                         }
                     } catch (error) {
                         console.error(error);
