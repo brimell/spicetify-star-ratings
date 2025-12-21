@@ -32,9 +32,12 @@ Settings, such as enabling/disabling half star ratings, can be accessed from the
 - Can be used as an 'offline' weighted playback.
 
 ## Average Ratings
-Enables the following changes:
-- Rating a song does not overwrite the old rating, but record it as a new rating
-- The canonical rating of a song is a time-weighted average over all ratings
+This has the purpose of making ratings more closely reflect your tastes;
+Instead of only keeping the latest rating, every rating is recorded.
+The canonical rating (used for display and random sampling) is calculated using a time-weighted average of all historical ratings.
+
+As a safeguard and to allow ad-hoc changes of mind, any re-ratings within a five minute window behave like a non-averaged rating:
+If the new rating is the same as the old one, the old rating is removed. If they are different, the new rating replaces the old one.
 
 ## Star Rating Playlist Images
 
