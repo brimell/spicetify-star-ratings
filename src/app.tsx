@@ -17,7 +17,14 @@ import {
 } from "./ratings";
 import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
 import { tracklistColumnCss } from "./css/css";
-import { getTracklistTrackUri, isAlbumPage, trackUriToTrackId, getNowPlayingTrackUri } from "./utils/utils";
+import {
+    getTracklistTrackUri,
+    isAlbumPage,
+    trackUriToTrackId,
+    getNowPlayingTrackUri,
+    weightedPlaybackEnabled,
+    setWeightedPlaybackEnabled,
+} from "./utils/utils";
 
 let settings: Settings | null = null;
 
@@ -48,8 +55,6 @@ let nowPlayingWidgetStarData = null;
 let clickListenerRunning = false;
 let ratingsLoading = false;
 let isSorting = false;
-
-let weightedPlaybackEnabled = false;
 
 const PLAYLIST_SIZE_LIMIT = 8000; // Maximum tracks per playlist
 
@@ -180,7 +185,7 @@ function getQueuedTracks(): Array<{ uri: string }> {
 }
 
 async function addWeightedTrackToQueue(): Promise<boolean> {
-    if (!weightedPlaybackEnabled) return false;
+    if (!weightedPlaybackEnabled()) return false;
 
     try {
         const trackUri = await selectWeightedRandomTrack();
@@ -216,7 +221,7 @@ function shouldAddWeightedTrack(): boolean {
 async function weightedLoop() {
     while (true) {
         try {
-            if (weightedPlaybackEnabled && shouldAddWeightedTrack()) {
+            if (weightedPlaybackEnabled() && shouldAddWeightedTrack()) {
                 await addWeightedTrackToQueue();
             }
         } catch (e) {
@@ -749,20 +754,26 @@ async function observerCallback(keys) {
 
         weightedShuffleButton.title = "Weighted Shuffle";
 
-        weightedShuffleButton.addEventListener("click", () => {
-            weightedPlaybackEnabled = !weightedPlaybackEnabled;
-            weightedShuffleButton.style.backgroundColor = weightedPlaybackEnabled ? "var(--background-press, #1db954)" : "transparent";
-            weightedShuffleButton.style.borderColor = weightedPlaybackEnabled
+        function updateButtonStyle() {
+            weightedShuffleButton.style.backgroundColor = weightedPlaybackEnabled() ? "var(--background-press, #1db954)" : "transparent";
+            weightedShuffleButton.style.borderColor = weightedPlaybackEnabled()
                 ? "var(--background-press, #1db954)"
                 : "var(--essential-subdued, #878787)";
-            weightedShuffleButton.style.color = weightedPlaybackEnabled ? "#1DB954" : "var(--text-subdued, #6a6a6a)";
+            weightedShuffleButton.style.color = weightedPlaybackEnabled() ? "#1DB954" : "var(--text-subdued, #6a6a6a)";
 
-            weightedShuffleButton.title = weightedPlaybackEnabled ? "Disable Weighted Shuffle" : "Enable Weighted Shuffle";
+            weightedShuffleButton.title = weightedPlaybackEnabled() ? "Disable Weighted Shuffle" : "Enable Weighted Shuffle";
+        }
 
-            api.showNotification(weightedPlaybackEnabled ? "Weighted shuffle enabled" : "Weighted shuffle disabled");
+        weightedShuffleButton.addEventListener("click", () => {
+            setWeightedPlaybackEnabled(!weightedPlaybackEnabled());
+            updateButtonStyle();
+
+            api.showNotification(weightedPlaybackEnabled() ? "Weighted shuffle enabled" : "Weighted shuffle disabled");
         });
 
         shuffleButton.parentNode.insertBefore(weightedShuffleButton, shuffleButton.nextSibling);
+
+        updateButtonStyle();
     }
 }
 
