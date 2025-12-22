@@ -782,10 +782,7 @@ async function updateAlbumStars() {
 function updateNowPlayingWidget() {
     if (!nowPlayingWidgetStarData) return;
 
-    function getTrackUri(): string {
-        return Spicetify.Player.data.item.uri;
-    }
-    const trackUri = getTrackUri();
+    const trackUri = Spicetify.Player.data.item.uri;
     const isTrack = trackUri.includes("track");
 
     nowPlayingWidgetStarData[0].style.display = isTrack ? "flex" : "none";
