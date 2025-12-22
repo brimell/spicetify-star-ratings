@@ -148,22 +148,11 @@ export async function getPlaylistTracks(playlistUri: string) {
 }
 
 export async function getLikedSongsTracks(): Promise<Array<{ uri: string; link: string }>> {
-    const pagesize = 50;
-    let offset = 0;
-    let out: Array<{ uri: string; link: string }> = [];
+    // LibraryAPI may not exist, but using the official API causes ratelimit hits
+    const res = await getLibraryAPI().getTracks({ limit: 9999 });
+    const array = res?.items ?? [];
 
-    while (true) {
-        const res = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/me/tracks?limit=${pagesize}&offset=${offset}&market=from_token`);
-        const items = res?.items || [];
-        if (!items.length) break; // all items fetched
-
-        for (const item of items) {
-            const uri = item?.track?.uri;
-            if (uri) out.push({ uri, link: uri });
-        }
-        offset += items.length;
-    }
-    return out;
+    return array.map((item) => ({ uri: item.uri, link: item.uri }));
 }
 
 export async function getPlaylist(playlistUri: string) {
