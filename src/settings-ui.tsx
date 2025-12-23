@@ -206,6 +206,17 @@ export function Settings({
                 }
                 field="averageRatings"
             />
+            <CheckboxItem
+                settings={settings}
+                name={
+                    <>
+                        Show Exact Rating
+                        <br />
+                        Display 3-digit decimal rating next to stars
+                    </>
+                }
+                field="showExactRating"
+            />
             <Heading value="Keyboard Shortcuts" />
             <ul>
                 <KeyboardShortcutDescription label="Rate current track 0.5 stars" numberKey="1" />

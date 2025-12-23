@@ -26,7 +26,7 @@ import {
     setWeightedPlaybackEnabled,
 } from "./utils/utils";
 
-let settings: Settings | null = null;
+export let settings: Settings | null = null;
 
 let ratedFolderUri: string | null = null;
 let ratings: Ratings = {};
@@ -333,7 +333,7 @@ function selectWeightedTracks(tracks: Array<{ uri: string; weight: number }>, co
 function updateAlbumRating() {
     const averageRating = getAlbumRating(ratings, album);
 
-    setRating(albumStarData[1], averageRating);
+    setRating(albumStarData[1], averageRating, albumStarData[2]);
 }
 
 async function handleRemoveRating(trackUri: string, rating: string, uid?: string) {
@@ -483,7 +483,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
         promise?.finally(() => {
             let tracklistStarData = findStars(trackUriToTrackId(trackUri));
             if (tracklistStarData) {
-                setRating(tracklistStarData[1], displayRating);
+                setRating(tracklistStarData[1], displayRating, tracklistStarData[2]);
                 tracklistStarData[0].style.visibility = !settings.averageRatings && oldRating[0].rating === newRating ? "hidden" : "visible";
             }
 
@@ -526,10 +526,10 @@ function addStarsListeners(starData, getTrackUri) {
         return getTrackRating(trackUri) ?? 0.0;
     }
 
-    const [stars, starElements] = starData;
+    const [stars, starElements, label] = starData;
 
     stars.addEventListener("mouseout", function () {
-        setRating(starElements, getCurrentRating(getTrackUri()));
+        setRating(starElements, getCurrentRating(getTrackUri()), label);
     });
 
     for (let i = 0; i < 5; i++) {
@@ -537,7 +537,7 @@ function addStarsListeners(starData, getTrackUri) {
 
         star.addEventListener("mousemove", function () {
             const rating = getMouseoverRating(settings, star, i);
-            setRating(starElements, rating);
+            setRating(starElements, rating, label);
         });
 
         star.addEventListener("click", getClickListener(i, null, starData, getTrackUri));
@@ -653,11 +653,12 @@ function createStarsForTracklists(tracklists: HTMLCollectionOf<Element>) {
             const starData = createStars(trackUriToTrackId(trackUri), 16);
             const stars = starData[0];
             const starElements = starData[1];
+            const label = starData[2];
             const currentRating = getTrackRating(trackUri) ?? 0.0;
 
             // Append stars to rating column and set listeners
             ratingColumn.appendChild(stars);
-            setRating(starElements, currentRating);
+            setRating(starElements, currentRating, label);
             addStarsListeners(
                 starData,
                 () => {
@@ -799,7 +800,7 @@ function updateNowPlayingWidget() {
     nowPlayingWidgetStarData[0].style.display = isTrack ? "flex" : "none";
 
     const currentRating = getTrackRating(trackUri) ?? 0.0;
-    setRating(nowPlayingWidgetStarData[1], currentRating);
+    setRating(nowPlayingWidgetStarData[1], currentRating, nowPlayingWidgetStarData[2]);
 }
 
 function shouldAddContextMenuOnFolders(uri) {

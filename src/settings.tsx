@@ -16,6 +16,7 @@ export interface Settings {
     defaultRating: HalfIncrementRating;
     reEnqueueWorkaround: boolean;
     averageRatings: boolean;
+    showExactRating: boolean;
 }
 
 const defaultSettings: Settings = {
@@ -29,6 +30,7 @@ const defaultSettings: Settings = {
     defaultRating: "2.5",
     reEnqueueWorkaround: false,
     averageRatings: false,
+    showExactRating: false,
 };
 
 export function getSettings(): Settings {
