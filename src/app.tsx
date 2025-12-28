@@ -341,9 +341,14 @@ async function handleRemoveRating(trackUri: string, rating: string, uid?: string
     const playlistName = playlistNames[playlistUri];
     await api.removeTrackFromPlaylist(playlistUri, trackUri, uid);
 
-    // re-fetch ratings to include the newest one and its uid
-    const allPlaylistItems = await getAllPlaylistItems(playlistUris);
-    ratings = getRatingsByTrack(allPlaylistItems);
+    if (uid != null) {
+        const index = ratings[trackUri].findIndex((timestampedRating) => timestampedRating.rating === rating && timestampedRating.uid == uid);
+        if (index !== -1) {
+            ratings[trackUri].splice(index, 1);
+        }
+    } else {
+        ratings[trackUri] = [];
+    }
 
     api.showNotification(`Removed from ${playlistName}`);
 }
