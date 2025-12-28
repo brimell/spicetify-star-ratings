@@ -61,7 +61,7 @@ export async function getAllPlaylistItems(playlistUris: PlaylistUris): Promise<T
     return allPlaylistItems;
 }
 
-export function getRatingsByTrack(allPlaylistItems: TracksByRatings): RatingsByTrack {
+export function getRatingsByTrack(allPlaylistItems: TracksByRatings): Ratings {
     const ratings: Ratings = {};
 
     for (const [rating, tracks] of Object.entries(allPlaylistItems)) {

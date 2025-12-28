@@ -426,8 +426,8 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
         const oldRating = ratings[trackUri];
         let newRating: string = ratingOverride !== null ? ratingOverride : getMouseoverRating(settings, star, i).toFixed(1);
 
-        let promise = null;
-        let displayRating = null;
+        let removePromise = null;
+        let addPromise = null;
 
         const FIVE_MIN = 5 * 60 * 1000;
 
@@ -435,7 +435,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
 
         // remove old rating
         if (old) {
-            promise = handleRemoveRating(trackUri, old.rating, old.uid);
+            removePromise = handleRemoveRating(trackUri, old.rating, old.uid);
 
             // If sync duplicate songs is enabled, remove the rating from all tracks with the same ISRC
             if (settings.syncDuplicateSongs) {
@@ -457,7 +457,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
 
         // add new rating
         if (!old || old.rating !== newRating) {
-            promise = handleAddRating(trackUri, newRating);
+            addPromise = handleAddRating(trackUri, newRating);
 
             // Like the track if it's rated above the like threshold
             if (settings.likeThreshold !== "disabled" && parseFloat(newRating) >= parseFloat(settings.likeThreshold)) {
@@ -480,10 +480,10 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
             }
         }
 
-        promise?.finally(() => {
+        Promise.allSettled([removePromise, addPromise].filter(Boolean)).finally(() => {
             let tracklistStarData = findStars(trackUriToTrackId(trackUri));
             if (tracklistStarData) {
-                setRating(tracklistStarData[1], displayRating, tracklistStarData[2]);
+                setRating(tracklistStarData[1], getTrackRating(trackUri), tracklistStarData[2]);
                 tracklistStarData[0].style.visibility = !settings.averageRatings && oldRating[0].rating === newRating ? "hidden" : "visible";
             }
 
