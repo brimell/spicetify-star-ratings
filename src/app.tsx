@@ -346,8 +346,11 @@ async function handleRemoveRating(trackUri: string, rating: string, uid?: string
         if (index !== -1) {
             ratings[trackUri].splice(index, 1);
         }
+        if (ratings[trackUri].length === 0) {
+            delete ratings[trackUri];
+        }
     } else {
-        ratings[trackUri] = [];
+        delete ratings[trackUri];
     }
 
     api.showNotification(`Removed from ${playlistName}`);
