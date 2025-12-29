@@ -22,8 +22,9 @@ import {
     isAlbumPage,
     trackUriToTrackId,
     getNowPlayingTrackUri,
-    weightedPlaybackEnabled,
-    setWeightedPlaybackEnabled,
+    weightedPlaybackEnabledForPlaylist,
+    setWeightedPlaybackEnabledForPlaylist,
+    getPlayerContext,
 } from "./utils/utils";
 
 export let settings: Settings | null = null;
@@ -114,8 +115,7 @@ function getTrackWeight(trackUri: string): number {
 function selectWeightedRandomTrack(): Promise<string | null> {
     return new Promise(async (resolve) => {
         try {
-            // Get current context (playlist, album, etc.)
-            const currentContext = Spicetify.Player?.data?.context || Spicetify.Player?.data?.item?.context || null;
+            const currentContext = getPlayerContext();
 
             if (!currentContext || !currentContext.uri) {
                 resolve(null);
@@ -203,7 +203,8 @@ function getQueuedTracks(): Array<{ uri: string }> {
 }
 
 async function addWeightedTrackToQueue(): Promise<boolean> {
-    if (!weightedPlaybackEnabled()) return false;
+    const context = getPlayerContext();
+    if (!weightedPlaybackEnabledForPlaylist(context.uri)) return false;
 
     try {
         const trackUri = await selectWeightedRandomTrack();
@@ -239,7 +240,7 @@ function shouldAddWeightedTrack(): boolean {
 async function weightedLoop() {
     while (true) {
         try {
-            if (weightedPlaybackEnabled() && shouldAddWeightedTrack()) {
+            if (weightedPlaybackEnabledForPlaylist() && shouldAddWeightedTrack()) {
                 await addWeightedTrackToQueue();
             }
         } catch (e) {
@@ -782,20 +783,20 @@ async function observerCallback(keys) {
         weightedShuffleButton.title = "Weighted Shuffle";
 
         function updateButtonStyle() {
-            weightedShuffleButton.style.backgroundColor = weightedPlaybackEnabled() ? "var(--background-press, #1db954)" : "transparent";
-            weightedShuffleButton.style.borderColor = weightedPlaybackEnabled()
+            weightedShuffleButton.style.backgroundColor = weightedPlaybackEnabledForPlaylist() ? "var(--background-press, #1db954)" : "transparent";
+            weightedShuffleButton.style.borderColor = weightedPlaybackEnabledForPlaylist()
                 ? "var(--background-press, #1db954)"
                 : "var(--essential-subdued, #878787)";
-            weightedShuffleButton.style.color = weightedPlaybackEnabled() ? "#1DB954" : "var(--text-subdued, #6a6a6a)";
+            weightedShuffleButton.style.color = weightedPlaybackEnabledForPlaylist() ? "#1DB954" : "var(--text-subdued, #6a6a6a)";
 
-            weightedShuffleButton.title = weightedPlaybackEnabled() ? "Disable Weighted Shuffle" : "Enable Weighted Shuffle";
+            weightedShuffleButton.title = weightedPlaybackEnabledForPlaylist() ? "Disable Weighted Shuffle" : "Enable Weighted Shuffle";
         }
 
         weightedShuffleButton.addEventListener("click", () => {
-            setWeightedPlaybackEnabled(!weightedPlaybackEnabled());
+            setWeightedPlaybackEnabledForPlaylist(!weightedPlaybackEnabledForPlaylist());
             updateButtonStyle();
 
-            api.showNotification(weightedPlaybackEnabled() ? "Weighted shuffle enabled" : "Weighted shuffle disabled");
+            api.showNotification(weightedPlaybackEnabledForPlaylist() ? "Weighted shuffle enabled" : "Weighted shuffle disabled");
         });
 
         shuffleButton.parentNode.insertBefore(weightedShuffleButton, shuffleButton.nextSibling);

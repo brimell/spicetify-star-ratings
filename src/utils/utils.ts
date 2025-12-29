@@ -30,11 +30,32 @@ export const getNowPlayingTrackUri = () => {
     return Spicetify.Player.data.item.uri;
 };
 
-const WEIGHTED_PLAYBACK_ENABLED_LOCAL_STORAGE_KEY = "starRatings:weighted-playback-enabled";
-export function weightedPlaybackEnabled(): boolean {
-    const localstorage = getLocalStorageData(WEIGHTED_PLAYBACK_ENABLED_LOCAL_STORAGE_KEY);
-    return localstorage === "true";
+// Get current player context (playlist, album, etc.)
+export function getPlayerContext(): Spicetify.PlayerContext | null {
+    return Spicetify.Player?.data?.context || Spicetify.Player?.data?.item?.context || null;
 }
-export function setWeightedPlaybackEnabled(enabled: boolean) {
-    setLocalStorageData(WEIGHTED_PLAYBACK_ENABLED_LOCAL_STORAGE_KEY, enabled ? "true" : "false");
+
+const WEIGHTED_PLAYBACK_ENABLED_LOCAL_STORAGE_KEY = "starRatings:weighted-playback-enabled";
+function getWeightedPlaybackEnabledRecord(): Record<string, boolean> {
+    const localstorage = getLocalStorageData(WEIGHTED_PLAYBACK_ENABLED_LOCAL_STORAGE_KEY);
+    return localstorage ? (JSON.parse(localstorage) as Record<string, boolean>) : {};
+}
+export function weightedPlaybackEnabledForPlaylist(): boolean {
+    const context = getPlayerContext();
+    if (!context) {
+        return false;
+    }
+
+    const record = getWeightedPlaybackEnabledRecord();
+    return record[context.uri] ?? false;
+}
+export function setWeightedPlaybackEnabledForPlaylist(enabled: boolean) {
+    const context = getPlayerContext();
+    if (!context) {
+        return;
+    }
+
+    let record = getWeightedPlaybackEnabledRecord();
+    record[context.uri] = enabled;
+    setLocalStorageData(WEIGHTED_PLAYBACK_ENABLED_LOCAL_STORAGE_KEY, JSON.stringify(record));
 }
