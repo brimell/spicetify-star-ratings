@@ -49,18 +49,18 @@ export interface Settings {
 
 const defaultSettings: Settings = {
     halfStarRatings: true,
-    quarterStarRatings: false,
-    likeThreshold: "4.0",
-    enableKeyboardShortcuts: true,
+    quarterStarRatings: true,
+    likeThreshold: "disabled",
+    enableKeyboardShortcuts: false,
     showPlaylistStars: true,
     nowPlayingStarsPosition: "left",
     skipThreshold: "disabled",
-    syncDuplicateSongs: false,
+    syncDuplicateSongs: true,
     defaultRating: "2.5",
-    reEnqueueWorkaround: false,
-    averageRatings: false,
-    showExactRating: false,
-    ratingToWeight: { kind: "Linear" },
+    reEnqueueWorkaround: true,
+    averageRatings: true,
+    showExactRating: true,
+    ratingToWeight: { kind: "Exponential", base: 2 },
     play: "all",
 };
 
