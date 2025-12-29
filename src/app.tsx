@@ -65,7 +65,7 @@ interface PlaylistItems {
 export function getTrackRating(trackUri: string): number | null {
     const rating = ratings[trackUri];
 
-    if (rating) {
+    if (rating && rating.length > 0) {
         // Time-weighted average with half-life of 6 months
         const HALF_LIFE_MS = 6 * (365.25 / 12) * 24 * 60 * 60 * 1000;
 
