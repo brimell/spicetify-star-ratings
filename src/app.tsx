@@ -489,7 +489,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
             let tracklistStarData = findStars(trackUriToTrackId(trackUri));
             if (tracklistStarData) {
                 setRating(tracklistStarData[1], getTrackRating(trackUri), tracklistStarData[2]);
-                tracklistStarData[0].style.visibility = !settings.averageRatings && oldRating[0].rating === newRating ? "hidden" : "visible";
+                tracklistStarData[0].style.visibility = !settings.averageRatings && oldRating?.[0]?.rating === newRating ? "hidden" : "visible";
             }
 
             updateNowPlayingWidget();
