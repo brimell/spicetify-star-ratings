@@ -81,6 +81,49 @@ function Heading({ value }) {
     return <h2 className="Type__TypeElement-goli3j-0 bcTfIx main-keyboardShortcutsHelpModal-sectionHeading">{value}</h2>;
 }
 
+function ScalingItem({ settings, name, field, onclick }) {
+  const [kind, setKind] = Spicetify.React.useState(settings[field].kind);
+  const [value, setValue] = Spicetify.React.useState(settings[field].value);
+
+  function commit(nextKind: "Linear" | "Exponential", nextValue: number) {
+    settings[field] = { kind: nextKind, value: nextValue };
+    saveSettings(settings);
+    if (onclick) onclick();
+  }
+
+  function handleKindChange(event) {
+    const nextKind = event.target.value as "Linear" | "Exponential";
+    setKind(nextKind);
+    commit(nextKind, value);
+  }
+
+  function handleValueChange(event) {
+    const nextValue = Number(event.target.value);
+    setValue(nextValue);
+    commit(kind, nextValue);
+  }
+
+  return (
+    <div className="popup-row">
+      <label className="col description">{name}</label>
+      <div className="col action" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+        <select value={kind} onChange={handleKindChange}>
+          <option value="Linear">Linear</option>
+          <option value="Exponential">Exponential</option>
+        </select>
+
+        <input
+          type="number"
+          value={value}
+          step={1}
+          onChange={handleValueChange}
+          style={{ width: "80px" }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function Settings({
     settings,
     registerKeyboardShortcuts,
@@ -216,6 +259,11 @@ export function Settings({
                     </>
                 }
                 field="showExactRating"
+            />
+            <ScalingItem
+              settings={settings}
+              name="Rating to weight conversion"
+              field="ratingToWeight"
             />
             <Heading value="Keyboard Shortcuts" />
             <ul>
