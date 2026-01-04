@@ -136,17 +136,6 @@ export async function getTracksWithSameISRC(uri: string) {
     return response.tracks.items;
 }
 
-export async function getPlaylistTracks(playlistUri: string) {
-    const playlistId = playlistUri.split(":").pop();
-    const tracks = await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/playlists/${playlistId}/tracks`);
-    return tracks.items.map((item) => ({
-        uri: item.track.uri,
-        link: item.track.uri,
-        name: item.track.name,
-        artists: item.track.artists.map((artist) => artist.name).join(", "),
-    }));
-}
-
 export async function getLikedSongsTracks(): Promise<Array<{ uri: string; link: string }>> {
     // LibraryAPI may not exist, but using the official API causes ratelimit hits
     const res = await getLibraryAPI().getTracks({ limit: 9999 });

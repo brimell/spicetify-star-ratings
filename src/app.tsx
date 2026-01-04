@@ -127,7 +127,7 @@ function selectWeightedRandomTrack(): Promise<string | null> {
             if (currentContext.uri.includes("playlist")) {
                 // Get tracks from current playlist
                 const playlistUri = currentContext.uri;
-                availableTracks = await api.getPlaylistTracks(playlistUri);
+                availableTracks = await api.getPlaylistItems(playlistUri);
             } else if (currentContext.uri.includes("album")) {
                 // Get tracks from current album
                 const albumId = currentContext.uri.split(":").pop();
@@ -143,7 +143,9 @@ function selectWeightedRandomTrack(): Promise<string | null> {
                 return;
             }
 
-            if (availableTracks.length === 0) {
+            const availableTrackLinks = availableTracks.map((track) => track.link ?? track.uri);
+
+            if (availableTrackLinks.length === 0) {
                 resolve(null);
                 return;
             }
@@ -152,8 +154,8 @@ function selectWeightedRandomTrack(): Promise<string | null> {
             const currentTrackUri = Spicetify.Player.data.item?.uri;
             const queuedTracks = getQueuedTracks();
 
-            const eligibleTracks = availableTracks.filter(
-                (track) => track.link !== currentTrackUri && !queuedTracks.some((queued) => queued.uri === track.link),
+            const eligibleTracks = availableTrackLinks.filter(
+                (track) => track !== currentTrackUri && !queuedTracks.some((queued) => queued.uri === track),
             );
 
             if (eligibleTracks.length === 0) {
@@ -162,7 +164,7 @@ function selectWeightedRandomTrack(): Promise<string | null> {
             }
 
             // Calculate weights and perform weighted random selection
-            const weights = eligibleTracks.map((track) => getTrackWeight(track.link));
+            const weights = eligibleTracks.map((track) => getTrackWeight(track));
             const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
 
             if (totalWeight <= 0) {
@@ -174,12 +176,12 @@ function selectWeightedRandomTrack(): Promise<string | null> {
             for (let i = 0; i < eligibleTracks.length; i++) {
                 randomValue -= weights[i];
                 if (randomValue <= 0) {
-                    resolve(eligibleTracks[i].link);
+                    resolve(eligibleTracks[i]);
                     return;
                 }
             }
 
-            resolve(eligibleTracks[eligibleTracks.length - 1].link);
+            resolve(eligibleTracks[eligibleTracks.length - 1]);
         } catch (error) {
             console.error("Error in weighted track selection:", error);
             resolve(null);
