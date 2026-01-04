@@ -272,7 +272,17 @@ export function Settings({
                 }
                 field="showExactRating"
             />
-            <ScalingItem settings={settings} name="Rating to weight conversion" field="ratingToWeight" />
+            <ScalingItem
+                settings={settings}
+                name={
+                    <>
+                        Rating to weight conversion
+                        <br />
+                        Used in weighted playback and playlist creation
+                    </>
+                }
+                field="ratingToWeight"
+            />
             <Heading value="Keyboard Shortcuts" />
             <ul>
                 <KeyboardShortcutDescription label="Rate current track 0.5 stars" numberKey="1" />
