@@ -145,3 +145,5 @@ out
 
 */_pycache_/*
 */__pycache__/*
+
+.direnv
