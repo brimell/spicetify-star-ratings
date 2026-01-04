@@ -162,7 +162,7 @@ function selectWeightedRandomTrack(): Promise<string | null> {
             }
 
             // Calculate weights and perform weighted random selection
-            const weights = eligibleTracks.map((track) => getTrackRatingOrDefault(track.link));
+            const weights = eligibleTracks.map((track) => getTrackWeight(track.link));
             const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
 
             if (totalWeight <= 0) {
@@ -289,7 +289,7 @@ async function createWeightedShufflePlaylist(originalPlaylistUri: string, trackC
         // Calculate weights for all tracks
         const tracksWithWeights = tracks.map((track) => ({
             uri: track.link ?? track.uri,
-            weight: getTrackRatingOrDefault(track.link ?? track.uri),
+            weight: getTrackWeight(track.link ?? track.uri),
         }));
 
         // Filter out tracks with zero weight (unlikely but possible)

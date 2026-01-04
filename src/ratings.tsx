@@ -1,6 +1,6 @@
 import * as api from "./api";
 import { getTrackRating, getTrackRatingOrDefault } from "./app";
-import { RatingsByTrack, TracksByRatings, PlaylistUris, Ratings, TimestampedRating } from "./types/store";
+import { TracksByRatings, PlaylistUris, Ratings, TimestampedRating } from "./types/store";
 interface Contents {
     items: [
         {
