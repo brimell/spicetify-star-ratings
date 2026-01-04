@@ -1,4 +1,4 @@
-import { saveSettings } from "./settings";
+import { saveSettings, Scaling } from "./settings";
 import "./settings-ui.css";
 
 const React = Spicetify.React;
@@ -82,46 +82,58 @@ function Heading({ value }) {
 }
 
 function ScalingItem({ settings, name, field, onclick }) {
-  const [kind, setKind] = Spicetify.React.useState(settings[field].kind);
-  const [value, setValue] = Spicetify.React.useState(settings[field].value);
+    const [kind, setKind] = Spicetify.React.useState(settings[field].kind);
+    const [base, setBase] = Spicetify.React.useState(settings[field].base ?? 1);
 
-  function commit(nextKind: "Linear" | "Exponential", nextValue: number) {
-    settings[field] = { kind: nextKind, value: nextValue };
-    saveSettings(settings);
-    if (onclick) onclick();
-  }
+    function commit(next: Scaling) {
+        settings[field] = next as any;
+        saveSettings(settings);
+        if (onclick) onclick();
+    }
 
-  function handleKindChange(event) {
-    const nextKind = event.target.value as "Linear" | "Exponential";
-    setKind(nextKind);
-    commit(nextKind, value);
-  }
+    function handleKindChange(event) {
+        const nextKind = event.target.value as Scaling["kind"];
+        setKind(nextKind);
 
-  function handleValueChange(event) {
-    const nextValue = Number(event.target.value);
-    setValue(nextValue);
-    commit(kind, nextValue);
-  }
+        if (nextKind === "Linear") {
+            commit({ kind: "Linear" });
+        } else {
+            commit({ kind: "Exponential", base: base });
+        }
+    }
 
-  return (
-    <div className="popup-row">
-      <label className="col description">{name}</label>
-      <div className="col action" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-        <select value={kind} onChange={handleKindChange}>
-          <option value="Linear">Linear</option>
-          <option value="Exponential">Exponential</option>
-        </select>
+    function handleBaseChange(event) {
+        const nextValue = Number(event.target.value);
+        setBase(nextValue);
+        if (kind === "Exponential") {
+            commit({ kind: "Exponential", base: nextValue });
+        }
+    }
 
-        <input
-          type="number"
-          value={value}
-          step={1}
-          onChange={handleValueChange}
-          style={{ width: "80px" }}
-        />
-      </div>
-    </div>
-  );
+    return (
+        <div className="popup-row">
+            <label className="col description">{name}</label>
+            <div className="col action" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <select value={kind} onChange={handleKindChange}>
+                    <option value="Linear">Linear</option>
+                    <option value="Exponential">Exponential</option>
+                </select>
+
+                <label style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    <span style={{ opacity: kind === "Exponential" ? 1 : 0.5 }}>Base</span>
+                    <input
+                        type="number"
+                        value={base}
+                        step={0.1}
+                        min={0}
+                        onChange={handleBaseChange}
+                        disabled={kind !== "Exponential"}
+                        style={{ width: "80px", opacity: kind === "Exponential" ? 1 : 0.5 }}
+                    />
+                </label>
+            </div>
+        </div>
+    );
 }
 
 export function Settings({
@@ -260,11 +272,7 @@ export function Settings({
                 }
                 field="showExactRating"
             />
-            <ScalingItem
-              settings={settings}
-              name="Rating to weight conversion"
-              field="ratingToWeight"
-            />
+            <ScalingItem settings={settings} name="Rating to weight conversion" field="ratingToWeight" />
             <Heading value="Keyboard Shortcuts" />
             <ul>
                 <KeyboardShortcutDescription label="Rate current track 0.5 stars" numberKey="1" />

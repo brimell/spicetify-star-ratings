@@ -5,7 +5,7 @@ type HalfIncrementRating = "0.0" | "0.5" | "1.0" | "1.5" | "2.0" | "2.5" | "3.0"
 type NowPlayingStarsPosition = "left" | "right";
 type Threshold = "disabled" | HalfIncrementRating;
 
-type Scaling = { kind: "Linear"; value: number } | { kind: "Exponential"; value: number };
+export type Scaling = { kind: "Linear" } | { kind: "Exponential"; base: number };
 
 export interface Settings {
     halfStarRatings: boolean;
@@ -34,7 +34,7 @@ const defaultSettings: Settings = {
     reEnqueueWorkaround: false,
     averageRatings: false,
     showExactRating: false,
-    ratingToWeight: { kind: "Linear", value: 1 },
+    ratingToWeight: { kind: "Linear" },
 };
 
 export function getSettings(): Settings {

@@ -95,6 +95,22 @@ export function getTrackRatingOrDefault(trackUri: string): number {
 
 // --- weighted playback ---
 
+function getTrackWeight(trackUri: string): number {
+    const rating = getTrackRatingOrDefault(trackUri);
+    switch (settings.ratingToWeight.kind) {
+        case "Linear":
+            return rating;
+        case "Exponential":
+            return Math.pow(settings.ratingToWeight.base, rating);
+
+        // Make the switch exhaustive at compile time
+        default: {
+            const _exhaustive: never = settings.ratingToWeight;
+            return _exhaustive;
+        }
+    }
+}
+
 function selectWeightedRandomTrack(): Promise<string | null> {
     return new Promise(async (resolve) => {
         try {
