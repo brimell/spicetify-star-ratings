@@ -1,3 +1,5 @@
+import { settings } from "./app";
+
 export function findStars(idSuffix: string) {
     const starsId = `stars-${idSuffix}`;
     const stars = document.getElementById(starsId);
@@ -10,7 +12,8 @@ export function findStars(idSuffix: string) {
         const stopSecond = document.getElementById(`${id}-gradient-second`);
         starElements.push([star, stopFirst, stopSecond]);
     }
-    return [stars, starElements];
+    const label = stars.querySelector(".stars-rating-label") as HTMLSpanElement | null;
+    return [stars, starElements, label];
 }
 
 function createStar(starsId: string, n: number, size: number) {
@@ -55,7 +58,7 @@ function createStar(starsId: string, n: number, size: number) {
     return [star, stopFirst, stopSecond];
 }
 
-export function createStars(trackURI: string, size: number): [HTMLSpanElement, (SVGSVGElement | SVGStopElement)[][]] {
+export function createStars(trackURI: string, size: number): [HTMLSpanElement, (SVGSVGElement | SVGStopElement)[][], HTMLSpanElement | undefined] {
     const stars = document.createElement("span");
     const id = `stars-${trackURI}`;
     stars.className = "stars";
@@ -71,11 +74,25 @@ export function createStars(trackURI: string, size: number): [HTMLSpanElement, (
         starElements.push([star, stopFirst, stopSecond]);
     }
 
-    return [stars, starElements];
+    let label = undefined;
+    if (settings?.showExactRating) {
+        // label next to stars
+        label = document.createElement("span");
+        label.className = "stars-rating-label";
+        label.style.marginLeft = "6px";
+        label.style.fontSize = "0.9em";
+        label.style.opacity = "0.9";
+        stars.append(label);
+    }
+
+    return [stars, starElements, label];
 }
 
-export function setRating(starElements: (SVGSVGElement | SVGStopElement)[][], rating: number) {
-    const halfStars = (rating /= 0.5);
+export function setRating(starElements: (SVGSVGElement | SVGStopElement)[][], rating: number, label?: HTMLElement) {
+    if (settings?.showExactRating && label && rating) label.textContent = rating.toFixed(2);
+
+    // round to nearest half-star
+    const halfStars = Math.round((rating /= 0.5));
     for (let i = 0; i < 5; i++) {
         const stopFirst = starElements[i][1];
         const stopSecond = starElements[i][2];

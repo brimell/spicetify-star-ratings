@@ -18,9 +18,26 @@ Settings, such as enabling/disabling half star ratings, can be accessed from the
 
 * [x] option to play songs with a minimum rating
 * [] option to play only unrated songs
-* [] option to play songs weighted by ratings
+* [x] option to play songs weighted by ratings
 * [] option to show rateyourmusic ratings
 * [] option to upload ratings to rateyourmusic (they only do albums)
+
+## Weighted Playback
+- Always keeps one weighted random track in queue.
+- Workaround for remote-play issues can be enabled in the settings.
+
+## Weighted Playlist
+- Create a weighted version of a Playlist.
+- Contains N random items from the original Playlist, weighted by their ratings.
+- Can be used as an 'offline' weighted playback.
+
+## Average Ratings
+This has the purpose of making ratings more closely reflect your tastes;
+Instead of only keeping the latest rating, every rating is recorded.
+The canonical rating (used for display and random sampling) is calculated using a time-weighted average of all historical ratings.
+
+As a safeguard and to allow ad-hoc changes of mind, any re-ratings within a five minute window behave like a non-averaged rating:
+If the new rating is the same as the old one, the old rating is removed. If they are different, the new rating replaces the old one.
 
 ## Star Rating Playlist Images
 

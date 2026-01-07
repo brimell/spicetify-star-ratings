@@ -1,4 +1,4 @@
-import { saveSettings } from "./settings";
+import { saveSettings, Scaling } from "./settings";
 import "./settings-ui.css";
 
 const React = Spicetify.React;
@@ -79,6 +79,61 @@ function KeyboardShortcutDescription({ label, numberKey }) {
 
 function Heading({ value }) {
     return <h2 className="Type__TypeElement-goli3j-0 bcTfIx main-keyboardShortcutsHelpModal-sectionHeading">{value}</h2>;
+}
+
+function ScalingItem({ settings, name, field, onclick }) {
+    const [kind, setKind] = Spicetify.React.useState(settings[field].kind);
+    const [base, setBase] = Spicetify.React.useState(settings[field].base ?? 1);
+
+    function commit(next: Scaling) {
+        settings[field] = next as any;
+        saveSettings(settings);
+        if (onclick) onclick();
+    }
+
+    function handleKindChange(event) {
+        const nextKind = event.target.value as Scaling["kind"];
+        setKind(nextKind);
+
+        if (nextKind === "Linear") {
+            commit({ kind: "Linear" });
+        } else {
+            commit({ kind: "Exponential", base: base });
+        }
+    }
+
+    function handleBaseChange(event) {
+        const nextValue = Number(event.target.value);
+        setBase(nextValue);
+        if (kind === "Exponential") {
+            commit({ kind: "Exponential", base: nextValue });
+        }
+    }
+
+    return (
+        <div className="popup-row">
+            <label className="col description">{name}</label>
+            <div className="col action" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <select value={kind} onChange={handleKindChange}>
+                    <option value="Linear">Linear</option>
+                    <option value="Exponential">Exponential</option>
+                </select>
+
+                <label style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+                    <span style={{ opacity: kind === "Exponential" ? 1 : 0.5 }}>Base</span>
+                    <input
+                        type="number"
+                        value={base}
+                        step={0.1}
+                        min={0}
+                        onChange={handleBaseChange}
+                        disabled={kind !== "Exponential"}
+                        style={{ width: "80px", opacity: kind === "Exponential" ? 1 : 0.5 }}
+                    />
+                </label>
+            </div>
+        </div>
+    );
 }
 
 export function Settings({
@@ -165,6 +220,68 @@ export function Settings({
                     </>
                 }
                 field="syncDuplicateSongs"
+            />
+            <DropdownItem
+                settings={settings}
+                name="Default rating for unrated songs"
+                field="defaultRating"
+                options={{
+                    "0.0": "0.0",
+                    "0.5": "0.5",
+                    "1.0": "1.0",
+                    "1.5": "1.5",
+                    "2.0": "2.0",
+                    "2.5": "2.5",
+                    "3.0": "3.0",
+                    "3.5": "3.5",
+                    "4.0": "4.0",
+                    "4.5": "4.5",
+                    "5.0": "5.0",
+                }}
+            />
+            <CheckboxItem
+                settings={settings}
+                name={
+                    <>
+                        Re-enqueue workaround
+                        <br />
+                        Workaround for a remote-play issue. Re-enqueues song after 1s, if necessary.
+                    </>
+                }
+                field="reEnqueueWorkaround"
+            />
+            <CheckboxItem
+                settings={settings}
+                name={
+                    <>
+                        Average Ratings
+                        <br />
+                        Record all ratings (instead of only latest). Uses a time-weighted average for the canonical rating.
+                    </>
+                }
+                field="averageRatings"
+            />
+            <CheckboxItem
+                settings={settings}
+                name={
+                    <>
+                        Show Exact Rating
+                        <br />
+                        Display 3-digit decimal rating next to stars
+                    </>
+                }
+                field="showExactRating"
+            />
+            <ScalingItem
+                settings={settings}
+                name={
+                    <>
+                        Rating to weight conversion
+                        <br />
+                        Used in weighted playback and playlist creation
+                    </>
+                }
+                field="ratingToWeight"
             />
             <Heading value="Keyboard Shortcuts" />
             <ul>

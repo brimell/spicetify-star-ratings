@@ -144,3 +144,6 @@ out
 # End of https://www.toptal.com/developers/gitignore/api/node
 
 */_pycache_/*
+*/__pycache__/*
+
+.direnv

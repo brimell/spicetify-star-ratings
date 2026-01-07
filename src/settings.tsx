@@ -1,41 +1,69 @@
 import * as api from "./api";
 
-export function getSettings() {
-    const defaultSettings = {
-        halfStarRatings: true,
-        likeThreshold: "4.0",
-        enableKeyboardShortcuts: true,
-        showPlaylistStars: true,
-        nowPlayingStarsPosition: "left",
-        skipThreshold: "disabled",
-        syncDuplicateSongs: false,
-    };
-    settings = {};
+type HalfIncrementRating = "0.0" | "0.5" | "1.0" | "1.5" | "2.0" | "2.5" | "3.0" | "3.5" | "4.0" | "4.5" | "5.0";
+
+type NowPlayingStarsPosition = "left" | "right";
+type Threshold = "disabled" | HalfIncrementRating;
+
+export type Scaling = { kind: "Linear" } | { kind: "Exponential"; base: number };
+
+export interface Settings {
+    halfStarRatings: boolean;
+    likeThreshold: Threshold;
+    enableKeyboardShortcuts: boolean;
+    showPlaylistStars: boolean;
+    nowPlayingStarsPosition: NowPlayingStarsPosition;
+    skipThreshold: Threshold;
+    syncDuplicateSongs: boolean;
+    defaultRating: HalfIncrementRating;
+    reEnqueueWorkaround: boolean;
+    averageRatings: boolean;
+    showExactRating: boolean;
+    ratingToWeight: Scaling;
+}
+
+const defaultSettings: Settings = {
+    halfStarRatings: true,
+    likeThreshold: "4.0",
+    enableKeyboardShortcuts: true,
+    showPlaylistStars: true,
+    nowPlayingStarsPosition: "left",
+    skipThreshold: "disabled",
+    syncDuplicateSongs: false,
+    defaultRating: "2.5",
+    reEnqueueWorkaround: false,
+    averageRatings: false,
+    showExactRating: false,
+    ratingToWeight: { kind: "Linear" },
+};
+
+export function getSettings(): Settings {
+    let settings: Partial<Settings> = {};
     try {
         const parsed = JSON.parse(api.getLocalStorageData("starRatings:settings"));
         if (parsed && typeof parsed === "object") {
-            settings = parsed;
+            settings = parsed as Partial<Settings>;
         } else {
             throw "";
         }
     } catch {
-        api.setLocalStorageData("starRatings:settings", defaultSettings);
-        return defaultSettings;
+        api.setLocalStorageData("starRatings:settings", JSON.stringify(defaultSettings));
+        return { ...defaultSettings };
     }
     let modified = false;
-    for (const key of Object.keys(defaultSettings)) {
-        if (!settings.hasOwnProperty(key)) {
+    for (const key of Object.keys(defaultSettings) as (keyof Settings)[]) {
+        if (!(key in settings)) {
             settings[key] = defaultSettings[key];
             modified = true;
         }
     }
     if (modified) {
-        api.setLocalStorageData("starRatings:settings", settings);
+        api.setLocalStorageData("starRatings:settings", JSON.stringify(settings));
     }
-    return settings;
+    return settings as Settings;
 }
 
-export function saveSettings(settings) {
+export function saveSettings(settings: Settings) {
     api.setLocalStorageData("starRatings:settings", JSON.stringify(settings));
 }
 

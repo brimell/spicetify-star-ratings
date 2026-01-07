@@ -1,0 +1,188 @@
+.weighted-playlist-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.weighted-playlist-modal-content {
+    background-color: var(--background-base, #121212);
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.weighted-playlist-modal-title {
+    margin: 0 0 16px 0;
+    color: var(--text-base, #ffffff);
+    font-size: 20px;
+    font-weight: 600;
+    font-family: "Inter", sans-serif;
+}
+
+.weighted-playlist-modal-description {
+    margin: 0 0 24px 0;
+    color: var(--text-subdued, #b3b3b3);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.weighted-playlist-input-section {
+    margin-bottom: 20px;
+}
+
+.weighted-playlist-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-base, #ffffff);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.weighted-playlist-input-container {
+    display: flex;
+    align-items: center;
+}
+
+.weighted-playlist-input {
+    background-color: var(--background-elevated-base, #181818);
+    border: 1px solid var(--essential-subdued, #727272);
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: var(--text-base, #ffffff);
+    font-size: 14px;
+    width: 200px;
+    text-align: left;
+    font-family: "Inter", sans-serif;
+}
+
+.weighted-playlist-input:focus {
+    outline: none;
+    border-color: var(--background-tinted-accent, #1db954);
+    box-shadow: 0 0 0 1px var(--background-tinted-accent, #1db954);
+}
+
+.weighted-playlist-input::placeholder {
+    color: var(--text-subdued, #b3b3b3);
+}
+
+.weighted-playlist-suggested {
+    margin-bottom: 20px;
+}
+
+.weighted-playlist-suggested-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-subdued, #b3b3b3);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.weighted-playlist-suggested-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.weighted-playlist-suggested-btn {
+    background-color: var(--background-tinted-base, #535353);
+    border: none;
+    border-radius: 16px;
+    color: var(--text-base, #ffffff);
+    padding: 6px 12px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    font-family: "Inter", sans-serif;
+    font-weight: 500;
+}
+
+.weighted-playlist-suggested-btn:hover {
+    background-color: var(--background-tinted-hover, #6a6a6a);
+}
+
+.weighted-playlist-suggested-btn.active {
+    background-color: var(--background-tinted-accent, #1db954);
+}
+
+.weighted-playlist-preview {
+    background-color: var(--background-tinted-base, #181818);
+    border-radius: 4px;
+    padding: 12px;
+    margin-bottom: 24px;
+}
+
+.weighted-playlist-preview-text {
+    color: var(--text-subdued, #b3b3b3);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.weighted-playlist-button-div {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.weighted-playlist-cancel-button,
+.weighted-playlist-create-button {
+    background-color: transparent;
+    border: 1px solid var(--essential-subdued, #878787);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: "Inter", sans-serif;
+}
+
+.weighted-playlist-cancel-button {
+    color: var(--text-subdued, #b3b3b3);
+}
+
+.weighted-playlist-cancel-button:hover {
+    border-color: var(--text-base, #ffffff);
+    color: var(--text-base, #ffffff);
+}
+
+.weighted-playlist-create-button {
+    background-color: var(--background-tinted-accent, #1db954);
+    border-color: var(--background-tinted-accent, #1db954);
+    color: var(--text-base, #ffffff);
+}
+
+.weighted-playlist-create-button:hover {
+    background-color: var(--background-tinted-accent-hover, #1ed760);
+    border-color: var(--background-tinted-accent-hover, #1ed760);
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .weighted-playlist-modal-content {
+        width: 95%;
+        padding: 20px;
+    }
+    
+    .weighted-playlist-suggested-buttons {
+        gap: 6px;
+    }
+    
+    .weighted-playlist-suggested-btn {
+        padding: 4px 10px;
+        font-size: 11px;
+    }
+}
