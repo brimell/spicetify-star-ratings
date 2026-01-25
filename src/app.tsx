@@ -313,7 +313,7 @@ async function createWeightedShufflePlaylist(originalPlaylistUri: string, trackC
         for (let i = 0; i < selectedTracks.length; i += batchSize) {
             const batch = selectedTracks.slice(i, i + batchSize);
             const trackUris = batch.map((track) => track.uri);
-            await api.addTracksToPlaylist(weightedPlaylist.uri, trackUris);
+            await api.addTracksToPlaylist(weightedPlaylist, trackUris);
         }
 
         return weightedPlaylist;
