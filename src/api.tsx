@@ -144,7 +144,11 @@ export async function getLikedSongsTracks(): Promise<Array<{ uri: string; link: 
     return array.map((item) => ({ uri: item.uri, link: item.uri }));
 }
 
-export async function getPlaylist(playlistUri: string) {
+export async function getPlaylistMetadata(playlistUri: string) {
+    // try platformAPI first, fall back to api.spotify.com
+    const platformMetadata = await getPlaylistAPI()?.getMetadata(playlistUri);
+    if (platformMetadata) return platformMetadata;
+
     const playlistId = playlistUri.split(":").pop();
     return await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/playlists/${playlistId}`);
 }

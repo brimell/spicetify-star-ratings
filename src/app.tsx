@@ -260,7 +260,7 @@ async function weightedLoop() {
 async function createWeightedShufflePlaylist(originalPlaylistUri: string, trackCount: number): Promise<any> {
     try {
         // Get the original playlist name
-        const originalPlaylist = await api.getPlaylist(originalPlaylistUri);
+        const originalPlaylist = await api.getPlaylistMetadata(originalPlaylistUri);
         const originalName = originalPlaylist.name;
         const weightedName = `${originalName} (Weighted ${trackCount})`;
 
