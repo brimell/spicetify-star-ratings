@@ -29,10 +29,14 @@ function getPlaylistAPI() {
 }
 
 export async function createPlaylist(name: string, folderUri: string) {
-    const options =
-        navigator.platform.startsWith("Linux") && navigator.userAgent.includes("Spotify/1.1.84.716")
-            ? { after: folderUri }
-            : { after: { uri: folderUri } };
+      const options =
+          navigator.platform.startsWith("Linux") && navigator.userAgent.includes("Spotify/1.1.84.716")
+              ? { after: folderUri }
+              : { after: { uri: folderUri } };
+
+    // try platformAPI first, fall back to api.spotify.com
+    const platformAPI = getRootlistAPI()?.createPlaylist(name, options);
+    if (platformAPI) return platformAPI;
 
     const username = (Spicetify as any).User?.getUsername?.() ?? Spicetify.Platform.username;
 

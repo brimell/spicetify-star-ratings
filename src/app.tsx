@@ -267,13 +267,13 @@ async function createWeightedShufflePlaylist(originalPlaylistUri: string, trackC
         // Create the new weighted shuffle playlist
         let weightedPlaylist;
         try {
-            weightedPlaylist = await api.createPlaylist(weightedName, ratedFolderUri);
+            weightedPlaylist = await api.createPlaylist(weightedName, "");
         } catch (error) {
             // If playlist already exists, try with a suffix
             let suffix = 1;
             while (suffix <= 100) {
                 try {
-                    weightedPlaylist = await api.createPlaylist(`${weightedName} (${suffix})`, ratedFolderUri);
+                    weightedPlaylist = await api.createPlaylist(`${weightedName} (${suffix})`, "");
                     break;
                 } catch (e) {
                     suffix++;
