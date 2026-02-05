@@ -1,3 +1,4 @@
+import { ratings } from "./app";
 import { saveSettings, Scaling } from "./settings";
 import "./settings-ui.css";
 
@@ -134,6 +135,16 @@ function ScalingItem({ settings, name, field, onclick }) {
             </div>
         </div>
     );
+}
+
+function download_ratings() {
+    const blob = new Blob([JSON.stringify(ratings)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const element = document.createElement("a");
+    element.href = url;
+    element.download = "ratings-export.json";
+    element.click();
+    URL.revokeObjectURL(url);
 }
 
 export function Settings({
@@ -283,6 +294,14 @@ export function Settings({
                 }
                 field="ratingToWeight"
             />
+            <div className="popup-row">
+                <label className="col description">Export ratings</label>
+                <div className="col action">
+                    <button className="button" onClick={download_ratings}>
+                        Download Ratings
+                    </button>
+                </div>
+            </div>
             <Heading value="Keyboard Shortcuts" />
             <ul>
                 <KeyboardShortcutDescription label="Rate current track 0.5 stars" numberKey="1" />

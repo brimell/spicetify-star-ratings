@@ -29,7 +29,7 @@ import {
 export let settings: Settings | null = null;
 
 let ratedFolderUri: string | null = null;
-let ratings: Ratings = {};
+export let ratings: Ratings = {};
 let playlistNames = {};
 let playlistUris: PlaylistUris = {};
 
