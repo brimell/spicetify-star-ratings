@@ -146,6 +146,9 @@ function download_ratings() {
     element.click();
     URL.revokeObjectURL(url);
 }
+async function copy_ratings() {
+    await Spicetify.Platform.ClipboardAPI.copy(JSON.stringify(ratings));
+}
 
 export function Settings({
     settings,
@@ -296,7 +299,10 @@ export function Settings({
             />
             <div className="popup-row">
                 <label className="col description">Export ratings</label>
-                <div className="col action">
+                <div className="col action" style={{ display: "flex", gap: "8px" }}>
+                    <button className="button" onClick={copy_ratings}>
+                        Copy Ratings To Clipboard
+                    </button>
                     <button className="button" onClick={download_ratings}>
                         Download Ratings
                     </button>
