@@ -792,6 +792,8 @@ async function observerCallback(keys) {
             weightedShuffleButton.title = weightedPlaybackEnabledForPlaylist() ? "Disable Weighted Shuffle" : "Enable Weighted Shuffle";
         }
 
+        setInterval(updateButtonStyle, 500); // make sure this stays up-to-date across context changes. Could be improved.
+
         weightedShuffleButton.addEventListener("click", () => {
             setWeightedPlaybackEnabledForPlaylist(!weightedPlaybackEnabledForPlaylist());
             updateButtonStyle();
