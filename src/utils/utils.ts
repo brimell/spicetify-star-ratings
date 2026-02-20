@@ -38,7 +38,17 @@ export function getPlayerContext(): Spicetify.PlayerContext | null {
 const WEIGHTED_PLAYBACK_ENABLED_LOCAL_STORAGE_KEY = "starRatings:weighted-playback-enabled";
 function getWeightedPlaybackEnabledRecord(): Record<string, boolean> {
     const localstorage = getLocalStorageData(WEIGHTED_PLAYBACK_ENABLED_LOCAL_STORAGE_KEY);
-    return localstorage ? (JSON.parse(localstorage) as Record<string, boolean>) : {};
+
+    if (localstorage) {
+        const parsed = JSON.parse(localstorage);
+        if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+            return {};
+        } else {
+            return parsed;
+        }
+    } else {
+        return {};
+    }
 }
 export function weightedPlaybackEnabledForPlaylist(): boolean {
     const context = getPlayerContext();
