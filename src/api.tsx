@@ -29,10 +29,10 @@ function getPlaylistAPI() {
 }
 
 export async function createPlaylist(name: string, folderUri: string) {
-      const options =
-          navigator.platform.startsWith("Linux") && navigator.userAgent.includes("Spotify/1.1.84.716")
-              ? { after: folderUri }
-              : { after: { uri: folderUri } };
+    const options =
+        navigator.platform.startsWith("Linux") && navigator.userAgent.includes("Spotify/1.1.84.716")
+            ? { after: folderUri }
+            : { after: { uri: folderUri } };
 
     // try platformAPI first, fall back to api.spotify.com
     const platformAPI = getRootlistAPI()?.createPlaylist(name, options);
@@ -142,7 +142,7 @@ export async function getTracksWithSameISRC(uri: string) {
 
 export async function getLikedSongsTracks(): Promise<Array<{ uri: string; link: string }>> {
     // LibraryAPI may not exist, but using the official API causes ratelimit hits
-    const res = await getLibraryAPI().getTracks({ limit: 9999 });
+    const res = await getLibraryAPI().getTracks({ limit: -1 }); // this seems to get all tracks (at least >1300)
     const array = res?.items ?? [];
 
     return array.map((item) => ({ uri: item.uri, link: item.uri }));
