@@ -30,9 +30,9 @@ import {
 export let settings: Settings | null = null;
 
 let ratedFolderUri: string | null = null;
-export let ratings: Ratings = {};
+let ratings: Ratings = {};
 let playlistNames = {};
-let playlistUris: PlaylistUris = {};
+export let playlistUris: PlaylistUris = {};
 
 let originalTracklistHeaderCss = null;
 let originalTracklistTrackCss = null;

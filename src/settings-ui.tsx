@@ -1,4 +1,5 @@
-import { ratings } from "./app";
+import { playlistUris } from "./app";
+import { getAllPlaylistItems } from "./ratings";
 import { saveSettings, Scaling } from "./settings";
 import "./settings-ui.css";
 
@@ -137,7 +138,8 @@ function ScalingItem({ settings, name, field, onclick }) {
     );
 }
 
-function download_ratings() {
+async function download_ratings() {
+    const ratings = await getAllPlaylistItems(playlistUris);
     const blob = new Blob([JSON.stringify(ratings)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const element = document.createElement("a");
@@ -147,6 +149,7 @@ function download_ratings() {
     URL.revokeObjectURL(url);
 }
 async function copy_ratings() {
+    const ratings = await getAllPlaylistItems(playlistUris);
     await Spicetify.Platform.ClipboardAPI.copy(JSON.stringify(ratings));
 }
 
@@ -168,7 +171,7 @@ export function Settings({
         else restoreTracklist();
     }
 
-    function hanleNowPlayingStarsPositionDropdownClick() {
+    function handleNowPlayingStarsPositionDropdownClick() {
         redrawNowPlayingStars();
     }
 
@@ -204,7 +207,7 @@ export function Settings({
                     Left: "left",
                     Right: "right",
                 }}
-                onclick={hanleNowPlayingStarsPositionDropdownClick}
+                onclick={handleNowPlayingStarsPositionDropdownClick}
             />
             <DropdownItem
                 settings={settings}
