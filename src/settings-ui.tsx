@@ -286,6 +286,16 @@ export function Settings({
                 }
                 field="showExactRating"
             />
+            <DropdownItem
+                settings={settings}
+                name="Play"
+                field="play"
+                options={{
+                    "All Songs": "all",
+                    "Only rated Songs": "onlyrated",
+                    "Only unrated Songs": "onlyunrated",
+                }}
+            />
             <ScalingItem
                 settings={settings}
                 name={

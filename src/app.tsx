@@ -943,7 +943,13 @@ async function main() {
 
     Spicetify.Player.addEventListener("songchange", () => {
         const trackUri = Spicetify.Player.data.item.uri;
-        if (trackUri in ratings && settings.skipThreshold !== "disabled" && (getTrackRating(trackUri) ?? 0.0) <= parseFloat(settings.skipThreshold)) {
+
+        const skip =
+            (trackUri in ratings && settings.play === "onlyunrated") ||
+            (!(trackUri in ratings) && settings.play === "onlyrated") ||
+            (settings.skipThreshold !== "disabled" && (getTrackRating(trackUri) ?? 0.0) <= parseFloat(settings.skipThreshold));
+
+        if (skip) {
             Spicetify.Player.next();
             return;
         }
