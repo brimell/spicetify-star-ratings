@@ -1,8 +1,5 @@
 import { settings } from "./app";
 
-// Each star element tuple: [svgElement, tlPath, blPath, trPath, brPath]
-// Quarter fill order within each star: TL (0.25), BL (0.50), TR (0.75), BR (1.00)
-
 /**
  * Format a rating number as a canonical string key.
  * Multiples of 0.5 use one decimal place  → "0.5", "1.0", "2.5"
@@ -119,11 +116,10 @@ export function createStars(trackURI: string, size: number): [HTMLSpanElement, (
 export function setRating(starElements: (SVGSVGElement | SVGPathElement)[][], rating: number, label?: HTMLElement) {
     if (settings?.showExactRating && label && rating) label.textContent = rating.toFixed(2);
 
-    // Express the rating as a count of quarter-unit increments (0–20 for a 5-star system)
     const totalQUnits = Math.round(rating * 4);
 
-    const lit = "var(--spice-button)";
-    const dim = "var(--spice-button-disabled)";
+    const on = "var(--spice-button)";
+    const off = "var(--spice-button-disabled)";
 
     for (let i = 0; i < 5; i++) {
         const [, tlPath, blPath, trPath, brPath] = starElements[i];
@@ -133,26 +129,26 @@ export function setRating(starElements: (SVGSVGElement | SVGPathElement)[][], ra
         const filled = Math.max(0, Math.min(4, totalQUnits - starBase));
 
         if (settings?.quarterStarRatings) {
-            // Fill order: TL → BL → TR → BR
-            (tlPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 1 ? lit : dim);
-            (blPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 2 ? lit : dim);
-            (trPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 3 ? lit : dim);
-            (brPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 4 ? lit : dim);
+            // Fill order: BL → TL → TR → BR
+            (blPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 1 ? on : off);
+            (tlPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 2 ? on : off);
+            (trPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 3 ? on : off);
+            (brPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 4 ? on : off);
         } else if (settings?.halfStarRatings) {
             // Left half = TL+BL, right half = TR+BR
             // Snap filled to nearest even count (i.e. nearest half-star boundary)
             const halfFilled = Math.round(filled / 2);
-            (tlPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 1 ? lit : dim);
-            (blPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 1 ? lit : dim);
-            (trPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 2 ? lit : dim);
-            (brPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 2 ? lit : dim);
+            (tlPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 1 ? on : off);
+            (blPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 1 ? on : off);
+            (trPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 2 ? on : off);
+            (brPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 2 ? on : off);
         } else {
             // Whole stars
             const isLit = i < Math.round(rating);
-            (tlPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? lit : dim);
-            (blPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? lit : dim);
-            (trPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? lit : dim);
-            (brPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? lit : dim);
+            (tlPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? on : off);
+            (blPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? on : off);
+            (trPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? on : off);
+            (brPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? on : off);
         }
     }
 }
@@ -170,11 +166,11 @@ export function getMouseoverRating(settings, star, i) {
         if (i === 0 && offsetX < 3) return 0;
 
         // Quadrant → rating offset within star
-        // TL = +0.25, BL = +0.50, TR = +0.75, BR = +1.00
-        if (!isRight && isTop) return i + 0.25;
-        if (!isRight && !isTop) return i + 0.5;
-        if (isRight && isTop) return i + 0.75;
-        return i + 1.0;
+        // BL = +0.25, TL = +0.50, TR = +0.75, BR = +1.00
+        if (!isRight && !isTop) return i + 0.25; // BL
+        if (!isRight && isTop) return i + 0.5; // TL
+        if (isRight && isTop) return i + 0.75; // TR
+        return i + 1.0; // BR
     } else {
         const half = isRight || !settings.halfStarRatings;
         const zeroStars = i === 0 && offsetX < 3;
