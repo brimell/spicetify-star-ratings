@@ -32,7 +32,29 @@ export function removePlaylistUris(playlistUris: PlaylistUris, ratedFolder: Cont
 export function addPlaylistUris(playlistUris: PlaylistUris, ratedFolder: Contents): [boolean, PlaylistUris] {
     const newPlaylistUris: PlaylistUris = { ...playlistUris };
     let changed = false;
-    const ratings = ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0"];
+    const ratings = [
+        "0.0",
+        "0.25",
+        "0.5",
+        "0.75",
+        "1.0",
+        "1.25",
+        "1.5",
+        "1.75",
+        "2.0",
+        "2.25",
+        "2.5",
+        "2.75",
+        "3.0",
+        "3.25",
+        "3.5",
+        "3.75",
+        "4.0",
+        "4.25",
+        "4.5",
+        "4.75",
+        "5.0",
+    ];
     const unmappedRatings = ratings.filter((rating) => !playlistUris.hasOwnProperty(rating));
     ratedFolder.items
         .filter((item) => unmappedRatings.includes(item.name))
@@ -79,9 +101,9 @@ export function getRatingsByTrack(allPlaylistItems: TracksByRatings): Ratings {
     return ratings;
 }
 
-export function getAlbumRating(ratings: Ratings, album): string {
+export function getAlbumRating(ratings: Ratings, album): number {
     console.log("album is:", album);
-    if (!album) return "0.0";
+    if (!album) return 0.0;
 
     const items = album.tracks.items; // Accessing items directly from album object
     let sumRatings = 0.0;
@@ -100,9 +122,9 @@ export function getAlbumRating(ratings: Ratings, album): string {
     let averageRating = 0.0;
     if (numRatings > 0) averageRating = sumRatings / numRatings;
 
-    // Round to nearest 0.5
-    averageRating = Math.round(averageRating * 2) / 2;
-    return averageRating.toFixed(1);
+    // Round to nearest 0.25 (finest supported granularity)
+    averageRating = Math.round(averageRating * 4) / 4;
+    return averageRating;
 }
 
 export async function sortPlaylistByRating(playlistUri: string, ratings: Ratings) {

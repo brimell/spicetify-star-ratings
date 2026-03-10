@@ -179,6 +179,7 @@ export function Settings({
         <div>
             <Heading value="Settings" />
             <CheckboxItem settings={settings} name="Half star ratings" field="halfStarRatings" />
+            <CheckboxItem settings={settings} name="Quarter star ratings" field="quarterStarRatings" />
             <CheckboxItem
                 settings={settings}
                 name="Enable keyboard shortcuts"

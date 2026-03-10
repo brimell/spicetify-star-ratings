@@ -1,5 +1,5 @@
 import * as api from "./api";
-import { createStars, setRating, getMouseoverRating, findStars } from "./stars";
+import { createStars, setRating, getMouseoverRating, findStars, toRatingString } from "./stars";
 import { Settings, getSettings, saveSettings, getPlaylistUris, savePlaylistUris, getRatedFolderUri, saveRatedFolderUri } from "./settings";
 import { Settings as SettingsUi } from "./settings-ui";
 import { SortModal } from "./sort-modal";
@@ -451,7 +451,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
         const star = starElements[i][0];
         const trackUri: string = getTrackUri();
         const oldRating = ratings[trackUri];
-        let newRating: string = ratingOverride !== null ? ratingOverride : getMouseoverRating(settings, star, i).toFixed(1);
+        let newRating: string = ratingOverride !== null ? ratingOverride : toRatingString(getMouseoverRating(settings, star, i));
 
         let removePromise = null;
         let addPromise = null;
