@@ -1,3 +1,5 @@
+This fork exists mostly for my changes to this project, but as the original seems to be sparsely maintained, feel free to open issues or chime in with ideas here :)
+
 # Spicetify Star Ratings
 Add star ratings to Spotify
 
