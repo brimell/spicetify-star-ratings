@@ -434,6 +434,10 @@ async function handleAddRating(trackUri: string, newRating: string) {
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatingsByTrack(allPlaylistItems);
 
+        // move new rating to the front
+        const latestRatingUid = ratings[trackUri].reduce((prev, current) => (current.time > prev.time ? current : prev)).uid;
+        await api.moveToFront(playlistUri, latestRatingUid);
+
         // Show notification
         const displayName = playlistNames[playlistUri];
         api.showNotification(`Added to ${displayName}`);

@@ -160,3 +160,7 @@ export async function getPlaylistMetadata(playlistUri: string) {
 export async function addTracksToPlaylist(playlistUri: string, trackUris: string[]) {
     await getPlaylistAPI().add(playlistUri, trackUris, { before: 1, after: 0 });
 }
+
+export async function moveToFront(playlistUri: string, uid: string) {
+    await getPlaylistAPI().move(playlistUri, [{ uid: uid }], { insert_before: 0 });
+}
