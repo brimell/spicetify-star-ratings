@@ -158,5 +158,5 @@ export async function getPlaylistMetadata(playlistUri: string) {
 }
 
 export async function addTracksToPlaylist(playlistUri: string, trackUris: string[]) {
-    await getPlaylistAPI().add(playlistUri, trackUris, { after: 1, before: 0 });
+    await getPlaylistAPI().add(playlistUri, trackUris, { before: 1, after: 0 });
 }
