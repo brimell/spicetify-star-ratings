@@ -1,6 +1,8 @@
 ## Fork
 This fork exists mostly for my changes to this project, but as the original seems to be sparsely maintained, feel free to open issues or chime in with ideas here :)
 
+See [here](https://github.com/brimell/spicetify-star-ratings/compare/main...jullanggit:spicetify-star-ratings:main?expand=1) for changes that heven't made it into upstream.
+
 ## Installation
 ```
 curl -L https://raw.githubusercontent.com/jullanggit/spicetify-star-ratings/refs/heads/main/dist/star-ratings.js \
