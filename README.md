@@ -81,6 +81,8 @@ https://github.com/jeroentvb/spicetify-playlist-icons provides a nice view of th
 
 ## Credits
 
+*Forked from [brimell's Spicetify Star Ratings](https://github.com/brimell/spicetify-star-ratings)*
+
 *Forked from [Duffey's Spicetify Star Ratings](https://github.com/duffey/spicetify-star-ratings) (archived)*
 
 *This extension was built with [Spicetify Creator](https://github.com/spicetify/spicetify-creator)*
