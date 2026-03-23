@@ -21,14 +21,14 @@ Settings, such as enabling/disabling half star ratings, can be accessed from the
 
 ## Implement List
 
-* [x] option to play songs with a minimum rating
-* [x] option to play only unrated songs
-* [x] option to play songs weighted by ratings
-      * [x] configurable weighting (linear/exponential)
-* [x] creating weigthed playlist
-* [x] rating averaging over time
-* [] option to show rateyourmusic ratings
-* [] option to upload ratings to rateyourmusic (they only do albums)
+- [x] option to play songs with a minimum rating
+- [x] option to play only unrated songs
+- [x] option to play songs weighted by ratings
+- [x] configurable weighting (linear/exponential)
+- [x] creating weigthed playlist
+- [x] rating averaging over time
+- [] option to show rateyourmusic ratings
+- [] option to upload ratings to rateyourmusic (they only do albums)
 
 ## Weighted Playback
 - Always keeps one weighted random track in queue.
