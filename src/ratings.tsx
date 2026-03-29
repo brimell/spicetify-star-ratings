@@ -29,38 +29,21 @@ export function removePlaylistUris(playlistUris: PlaylistUris, ratedFolder: Cont
     return [changed, newPlaylistUris];
 }
 
+function isFloatPlaylistName(name: string): boolean {
+    // Accept plain decimal rating playlist names like 3, 3.5, 4.25, 4.333.
+    return /^\d+(?:\.\d+)?$/.test(name);
+}
+
 export function addPlaylistUris(playlistUris: PlaylistUris, ratedFolder: Contents): [boolean, PlaylistUris] {
     const newPlaylistUris: PlaylistUris = { ...playlistUris };
     let changed = false;
-    const ratings = [
-        "0.0",
-        "0.25",
-        "0.5",
-        "0.75",
-        "1.0",
-        "1.25",
-        "1.5",
-        "1.75",
-        "2.0",
-        "2.25",
-        "2.5",
-        "2.75",
-        "3.0",
-        "3.25",
-        "3.5",
-        "3.75",
-        "4.0",
-        "4.25",
-        "4.5",
-        "4.75",
-        "5.0",
-    ];
-    const unmappedRatings = ratings.filter((rating) => !playlistUris.hasOwnProperty(rating));
     ratedFolder.items
-        .filter((item) => unmappedRatings.includes(item.name))
+        .filter((item) => item.type === "playlist" && isFloatPlaylistName(item.name))
         .forEach((item) => {
-            newPlaylistUris[item.name] = item.uri;
-            changed = true;
+            if (newPlaylistUris[item.name] !== item.uri) {
+                newPlaylistUris[item.name] = item.uri;
+                changed = true;
+            }
         });
     return [changed, newPlaylistUris];
 }
