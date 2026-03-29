@@ -1,7 +1,7 @@
 ## Fork
 This fork exists mostly for my changes to this project, but as the original seems to be sparsely maintained, feel free to open issues or chime in with ideas here :)
 
-See [here](https://github.com/brimell/spicetify-star-ratings/compare/main...jullanggit:spicetify-star-ratings:main?expand=1) for changes that heven't yet made it into upstream.
+See [here](https://github.com/brimell/spicetify-star-ratings/compare/main...jullanggit:spicetify-star-ratings:main?expand=1) for changes that haven't yet made it into upstream.
 
 ## Installation
 ```
