@@ -66,22 +66,55 @@ export async function getAllPlaylistItems(playlistUris: PlaylistUris): Promise<T
     return allPlaylistItems;
 }
 
+function normalizeTrackRatings(entries: TimestampedRating[]): TimestampedRating[] {
+    const FIVE_MIN_MS = 5 * 60 * 1000;
+    const sortedEntries = [...entries].sort((a, b) => a.time.getTime() - b.time.getTime());
+    const normalized: TimestampedRating[] = [];
+
+    for (const entry of sortedEntries) {
+        const previous = normalized[normalized.length - 1];
+        if (!previous) {
+            normalized.push(entry);
+            continue;
+        }
+
+        if (entry.time.getTime() - previous.time.getTime() <= FIVE_MIN_MS) {
+            if (entry.rating === previous.rating) {
+                normalized.pop();
+            } else {
+                normalized[normalized.length - 1] = entry;
+            }
+            continue;
+        }
+
+        normalized.push(entry);
+    }
+
+    return normalized.sort((a, b) => b.time.getTime() - a.time.getTime());
+}
+
 export function getRatingsByTrack(allPlaylistItems: TracksByRatings): Ratings {
-    const ratings: Ratings = {};
+    const ratingsByTrack: Ratings = {};
 
     for (const [rating, tracks] of Object.entries(allPlaylistItems)) {
         for (const track of tracks) {
             const trackUri = track.link ?? track.uri;
             const entry: TimestampedRating = { rating, time: new Date(track.addedAt), uid: track.uid };
 
-            if (!ratings[trackUri]) {
-                ratings[trackUri] = [entry];
+            if (!ratingsByTrack[trackUri]) {
+                ratingsByTrack[trackUri] = [entry];
             } else {
-                ratings[trackUri].push(entry);
+                ratingsByTrack[trackUri].push(entry);
             }
         }
     }
-    return ratings;
+
+    const normalizedRatings: Ratings = {};
+    for (const [trackUri, entries] of Object.entries(ratingsByTrack)) {
+        normalizedRatings[trackUri] = normalizeTrackRatings(entries);
+    }
+
+    return normalizedRatings;
 }
 
 export function getAlbumRating(ratings: Ratings, album): number {
