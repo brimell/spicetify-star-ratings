@@ -1,18 +1,15 @@
-## Fork
 This fork exists mostly for my changes to this project, but as the original seems to be sparsely maintained, feel free to open issues or chime in with ideas here :)
-
-## Installation
-```
-curl -L https://raw.githubusercontent.com/jullanggit/spicetify-star-ratings/refs/heads/main/dist/star-ratings.js \
- -o "$(spicetify path -e)/star-ratings.js" \
- && spicetify config extensions star-ratings.js \
- && spicetify backup apply
-```
 
 # Spicetify Star Ratings
 Add star ratings to Spotify
 
 ![banner](/imgs/preview.png)
+
+## Install
+
+1. Install [Spicetify](https://spicetify.app)
+2. Install "Star Ratings" from the Marketplace
+   <img src="imgs/install.png" height="600px" alt="install">
 
 ## Settings
 
