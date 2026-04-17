@@ -1,3 +1,5 @@
+This branch contains patches to make @jullanggit's settings the default. Feel free to use it, but no guarantee for it to stick around!
+
 # Spicetify Star Ratings
 Add star ratings to Spotify
 
