@@ -1,3 +1,5 @@
+import { playlistUris } from "./app";
+import { getAllPlaylistItems } from "./ratings";
 import { saveSettings, Scaling } from "./settings";
 import "./settings-ui.css";
 
@@ -136,6 +138,21 @@ function ScalingItem({ settings, name, field, onclick }) {
     );
 }
 
+async function download_ratings() {
+    const ratings = await getAllPlaylistItems(playlistUris);
+    const blob = new Blob([JSON.stringify(ratings)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const element = document.createElement("a");
+    element.href = url;
+    element.download = "ratings-export.json";
+    element.click();
+    URL.revokeObjectURL(url);
+}
+async function copy_ratings() {
+    const ratings = await getAllPlaylistItems(playlistUris);
+    await Spicetify.Platform.ClipboardAPI.copy(JSON.stringify(ratings));
+}
+
 export function Settings({
     settings,
     registerKeyboardShortcuts,
@@ -154,7 +171,7 @@ export function Settings({
         else restoreTracklist();
     }
 
-    function hanleNowPlayingStarsPositionDropdownClick() {
+    function handleNowPlayingStarsPositionDropdownClick() {
         redrawNowPlayingStars();
     }
 
@@ -162,6 +179,7 @@ export function Settings({
         <div>
             <Heading value="Settings" />
             <CheckboxItem settings={settings} name="Half star ratings" field="halfStarRatings" />
+            <CheckboxItem settings={settings} name="Quarter star ratings" field="quarterStarRatings" />
             <CheckboxItem
                 settings={settings}
                 name="Enable keyboard shortcuts"
@@ -190,7 +208,7 @@ export function Settings({
                     Left: "left",
                     Right: "right",
                 }}
-                onclick={hanleNowPlayingStarsPositionDropdownClick}
+                onclick={handleNowPlayingStarsPositionDropdownClick}
             />
             <DropdownItem
                 settings={settings}
@@ -272,6 +290,16 @@ export function Settings({
                 }
                 field="showExactRating"
             />
+            <DropdownItem
+                settings={settings}
+                name="Play"
+                field="play"
+                options={{
+                    "All Songs": "all",
+                    "Only rated Songs": "onlyrated",
+                    "Only unrated Songs": "onlyunrated",
+                }}
+            />
             <ScalingItem
                 settings={settings}
                 name={
@@ -283,6 +311,17 @@ export function Settings({
                 }
                 field="ratingToWeight"
             />
+            <div className="popup-row">
+                <label className="col description">Export ratings</label>
+                <div className="col action" style={{ display: "flex", gap: "8px" }}>
+                    <button className="button" onClick={copy_ratings}>
+                        Copy Ratings To Clipboard
+                    </button>
+                    <button className="button" onClick={download_ratings}>
+                        Download Ratings
+                    </button>
+                </div>
+            </div>
             <Heading value="Keyboard Shortcuts" />
             <ul>
                 <KeyboardShortcutDescription label="Rate current track 0.5 stars" numberKey="1" />

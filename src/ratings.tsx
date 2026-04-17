@@ -29,16 +29,21 @@ export function removePlaylistUris(playlistUris: PlaylistUris, ratedFolder: Cont
     return [changed, newPlaylistUris];
 }
 
+function isFloatPlaylistName(name: string): boolean {
+    // Accept plain decimal rating playlist names like 3, 3.5, 4.25, 4.333.
+    return /^\d+(?:\.\d+)?$/.test(name);
+}
+
 export function addPlaylistUris(playlistUris: PlaylistUris, ratedFolder: Contents): [boolean, PlaylistUris] {
     const newPlaylistUris: PlaylistUris = { ...playlistUris };
     let changed = false;
-    const ratings = ["0.0", "0.5", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5", "5.0"];
-    const unmappedRatings = ratings.filter((rating) => !playlistUris.hasOwnProperty(rating));
     ratedFolder.items
-        .filter((item) => unmappedRatings.includes(item.name))
+        .filter((item) => item.type === "playlist" && isFloatPlaylistName(item.name))
         .forEach((item) => {
-            newPlaylistUris[item.name] = item.uri;
-            changed = true;
+            if (newPlaylistUris[item.name] !== item.uri) {
+                newPlaylistUris[item.name] = item.uri;
+                changed = true;
+            }
         });
     return [changed, newPlaylistUris];
 }
@@ -61,27 +66,60 @@ export async function getAllPlaylistItems(playlistUris: PlaylistUris): Promise<T
     return allPlaylistItems;
 }
 
+function normalizeTrackRatings(entries: TimestampedRating[]): TimestampedRating[] {
+    const FIVE_MIN_MS = 5 * 60 * 1000;
+    const sortedEntries = [...entries].sort((a, b) => a.time.getTime() - b.time.getTime());
+    const normalized: TimestampedRating[] = [];
+
+    for (const entry of sortedEntries) {
+        const previous = normalized[normalized.length - 1];
+        if (!previous) {
+            normalized.push(entry);
+            continue;
+        }
+
+        if (entry.time.getTime() - previous.time.getTime() <= FIVE_MIN_MS) {
+            if (entry.rating === previous.rating) {
+                normalized.pop();
+            } else {
+                normalized[normalized.length - 1] = entry;
+            }
+            continue;
+        }
+
+        normalized.push(entry);
+    }
+
+    return normalized.sort((a, b) => b.time.getTime() - a.time.getTime());
+}
+
 export function getRatingsByTrack(allPlaylistItems: TracksByRatings): Ratings {
-    const ratings: Ratings = {};
+    const ratingsByTrack: Ratings = {};
 
     for (const [rating, tracks] of Object.entries(allPlaylistItems)) {
         for (const track of tracks) {
             const trackUri = track.link ?? track.uri;
             const entry: TimestampedRating = { rating, time: new Date(track.addedAt), uid: track.uid };
 
-            if (!ratings[trackUri]) {
-                ratings[trackUri] = [entry];
+            if (!ratingsByTrack[trackUri]) {
+                ratingsByTrack[trackUri] = [entry];
             } else {
-                ratings[trackUri].push(entry);
+                ratingsByTrack[trackUri].push(entry);
             }
         }
     }
-    return ratings;
+
+    const normalizedRatings: Ratings = {};
+    for (const [trackUri, entries] of Object.entries(ratingsByTrack)) {
+        normalizedRatings[trackUri] = normalizeTrackRatings(entries);
+    }
+
+    return normalizedRatings;
 }
 
-export function getAlbumRating(ratings: Ratings, album): string {
+export function getAlbumRating(ratings: Ratings, album): number {
     console.log("album is:", album);
-    if (!album) return "0.0";
+    if (!album) return 0.0;
 
     const items = album.tracks.items; // Accessing items directly from album object
     let sumRatings = 0.0;
@@ -100,9 +138,9 @@ export function getAlbumRating(ratings: Ratings, album): string {
     let averageRating = 0.0;
     if (numRatings > 0) averageRating = sumRatings / numRatings;
 
-    // Round to nearest 0.5
-    averageRating = Math.round(averageRating * 2) / 2;
-    return averageRating.toFixed(1);
+    // Round to nearest 0.25 (finest supported granularity)
+    averageRating = Math.round(averageRating * 4) / 4;
+    return averageRating;
 }
 
 export async function sortPlaylistByRating(playlistUri: string, ratings: Ratings) {

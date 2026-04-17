@@ -1,14 +1,38 @@
 import * as api from "./api";
 
 type HalfIncrementRating = "0.0" | "0.5" | "1.0" | "1.5" | "2.0" | "2.5" | "3.0" | "3.5" | "4.0" | "4.5" | "5.0";
+type QuarterIncrementRating =
+    | "0.0"
+    | "0.25"
+    | "0.5"
+    | "0.75"
+    | "1.0"
+    | "1.25"
+    | "1.5"
+    | "1.75"
+    | "2.0"
+    | "2.25"
+    | "2.5"
+    | "2.75"
+    | "3.0"
+    | "3.25"
+    | "3.5"
+    | "3.75"
+    | "4.0"
+    | "4.25"
+    | "4.5"
+    | "4.75"
+    | "5.0";
 
 type NowPlayingStarsPosition = "left" | "right";
 type Threshold = "disabled" | HalfIncrementRating;
 
+export type Play = "all" | "onlyrated" | "onlyunrated";
 export type Scaling = { kind: "Linear" } | { kind: "Exponential"; base: number };
 
 export interface Settings {
     halfStarRatings: boolean;
+    quarterStarRatings: boolean;
     likeThreshold: Threshold;
     enableKeyboardShortcuts: boolean;
     showPlaylistStars: boolean;
@@ -20,10 +44,12 @@ export interface Settings {
     averageRatings: boolean;
     showExactRating: boolean;
     ratingToWeight: Scaling;
+    play: Play;
 }
 
 const defaultSettings: Settings = {
     halfStarRatings: true,
+    quarterStarRatings: false,
     likeThreshold: "4.0",
     enableKeyboardShortcuts: true,
     showPlaylistStars: true,
@@ -35,6 +61,7 @@ const defaultSettings: Settings = {
     averageRatings: false,
     showExactRating: false,
     ratingToWeight: { kind: "Linear" },
+    play: "all",
 };
 
 export function getSettings(): Settings {

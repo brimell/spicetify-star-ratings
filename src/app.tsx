@@ -1,5 +1,5 @@
 import * as api from "./api";
-import { createStars, setRating, getMouseoverRating, findStars } from "./stars";
+import { createStars, setRating, getMouseoverRating, findStars, toRatingString } from "./stars";
 import { Settings, getSettings, saveSettings, getPlaylistUris, savePlaylistUris, getRatedFolderUri, saveRatedFolderUri } from "./settings";
 import { Settings as SettingsUi } from "./settings-ui";
 import { SortModal } from "./sort-modal";
@@ -22,8 +22,9 @@ import {
     isAlbumPage,
     trackUriToTrackId,
     getNowPlayingTrackUri,
-    weightedPlaybackEnabled,
-    setWeightedPlaybackEnabled,
+    weightedPlaybackEnabledForPlaylist,
+    setWeightedPlaybackEnabledForPlaylist,
+    getPlayerContext,
 } from "./utils/utils";
 
 export let settings: Settings | null = null;
@@ -31,7 +32,7 @@ export let settings: Settings | null = null;
 let ratedFolderUri: string | null = null;
 let ratings: Ratings = {};
 let playlistNames = {};
-let playlistUris: PlaylistUris = {};
+export let playlistUris: PlaylistUris = {};
 
 let originalTracklistHeaderCss = null;
 let originalTracklistTrackCss = null;
@@ -114,8 +115,7 @@ function getTrackWeight(trackUri: string): number {
 function selectWeightedRandomTrack(): Promise<string | null> {
     return new Promise(async (resolve) => {
         try {
-            // Get current context (playlist, album, etc.)
-            const currentContext = Spicetify.Player?.data?.context || Spicetify.Player?.data?.item?.context || null;
+            const currentContext = getPlayerContext();
 
             if (!currentContext || !currentContext.uri) {
                 resolve(null);
@@ -203,7 +203,8 @@ function getQueuedTracks(): Array<{ uri: string }> {
 }
 
 async function addWeightedTrackToQueue(): Promise<boolean> {
-    if (!weightedPlaybackEnabled()) return false;
+    const context = getPlayerContext();
+    if (!weightedPlaybackEnabledForPlaylist(context.uri)) return false;
 
     try {
         const trackUri = await selectWeightedRandomTrack();
@@ -239,7 +240,7 @@ function shouldAddWeightedTrack(): boolean {
 async function weightedLoop() {
     while (true) {
         try {
-            if (weightedPlaybackEnabled() && shouldAddWeightedTrack()) {
+            if (weightedPlaybackEnabledForPlaylist() && shouldAddWeightedTrack()) {
                 await addWeightedTrackToQueue();
             }
         } catch (e) {
@@ -260,20 +261,20 @@ async function weightedLoop() {
 async function createWeightedShufflePlaylist(originalPlaylistUri: string, trackCount: number): Promise<any> {
     try {
         // Get the original playlist name
-        const originalPlaylist = await api.getPlaylist(originalPlaylistUri);
+        const originalPlaylist = await api.getPlaylistMetadata(originalPlaylistUri);
         const originalName = originalPlaylist.name;
         const weightedName = `${originalName} (Weighted ${trackCount})`;
 
         // Create the new weighted shuffle playlist
         let weightedPlaylist;
         try {
-            weightedPlaylist = await api.createPlaylist(weightedName, ratedFolderUri);
+            weightedPlaylist = await api.createPlaylist(weightedName, "");
         } catch (error) {
             // If playlist already exists, try with a suffix
             let suffix = 1;
             while (suffix <= 100) {
                 try {
-                    weightedPlaylist = await api.createPlaylist(`${weightedName} (${suffix})`, ratedFolderUri);
+                    weightedPlaylist = await api.createPlaylist(`${weightedName} (${suffix})`, "");
                     break;
                 } catch (e) {
                     suffix++;
@@ -313,7 +314,7 @@ async function createWeightedShufflePlaylist(originalPlaylistUri: string, trackC
         for (let i = 0; i < selectedTracks.length; i += batchSize) {
             const batch = selectedTracks.slice(i, i + batchSize);
             const trackUris = batch.map((track) => track.uri);
-            await api.addTracksToPlaylist(weightedPlaylist.uri, trackUris);
+            await api.addTracksToPlaylist(weightedPlaylist, trackUris);
         }
 
         return weightedPlaylist;
@@ -433,6 +434,10 @@ async function handleAddRating(trackUri: string, newRating: string) {
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatingsByTrack(allPlaylistItems);
 
+        // move new rating to the front
+        const latestRatingUid = ratings[trackUri].reduce((prev, current) => (current.time > prev.time ? current : prev)).uid;
+        await api.moveToFront(playlistUri, latestRatingUid);
+
         // Show notification
         const displayName = playlistNames[playlistUri];
         api.showNotification(`Added to ${displayName}`);
@@ -450,7 +455,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
         const star = starElements[i][0];
         const trackUri: string = getTrackUri();
         const oldRating = ratings[trackUri];
-        let newRating: string = ratingOverride !== null ? ratingOverride : getMouseoverRating(settings, star, i).toFixed(1);
+        let newRating: string = ratingOverride !== null ? ratingOverride : toRatingString(getMouseoverRating(settings, star, i));
 
         let removePromise = null;
         let addPromise = null;
@@ -782,20 +787,22 @@ async function observerCallback(keys) {
         weightedShuffleButton.title = "Weighted Shuffle";
 
         function updateButtonStyle() {
-            weightedShuffleButton.style.backgroundColor = weightedPlaybackEnabled() ? "var(--background-press, #1db954)" : "transparent";
-            weightedShuffleButton.style.borderColor = weightedPlaybackEnabled()
+            weightedShuffleButton.style.backgroundColor = weightedPlaybackEnabledForPlaylist() ? "var(--background-press, #1db954)" : "transparent";
+            weightedShuffleButton.style.borderColor = weightedPlaybackEnabledForPlaylist()
                 ? "var(--background-press, #1db954)"
                 : "var(--essential-subdued, #878787)";
-            weightedShuffleButton.style.color = weightedPlaybackEnabled() ? "#1DB954" : "var(--text-subdued, #6a6a6a)";
+            weightedShuffleButton.style.color = weightedPlaybackEnabledForPlaylist() ? "#1DB954" : "var(--text-subdued, #6a6a6a)";
 
-            weightedShuffleButton.title = weightedPlaybackEnabled() ? "Disable Weighted Shuffle" : "Enable Weighted Shuffle";
+            weightedShuffleButton.title = weightedPlaybackEnabledForPlaylist() ? "Disable Weighted Shuffle" : "Enable Weighted Shuffle";
         }
 
+        setInterval(updateButtonStyle, 500); // make sure this stays up-to-date across context changes. Could be improved.
+
         weightedShuffleButton.addEventListener("click", () => {
-            setWeightedPlaybackEnabled(!weightedPlaybackEnabled());
+            setWeightedPlaybackEnabledForPlaylist(!weightedPlaybackEnabledForPlaylist());
             updateButtonStyle();
 
-            api.showNotification(weightedPlaybackEnabled() ? "Weighted shuffle enabled" : "Weighted shuffle disabled");
+            api.showNotification(weightedPlaybackEnabledForPlaylist() ? "Weighted shuffle enabled" : "Weighted shuffle disabled");
         });
 
         shuffleButton.parentNode.insertBefore(weightedShuffleButton, shuffleButton.nextSibling);
@@ -940,7 +947,13 @@ async function main() {
 
     Spicetify.Player.addEventListener("songchange", () => {
         const trackUri = Spicetify.Player.data.item.uri;
-        if (trackUri in ratings && settings.skipThreshold !== "disabled" && (getTrackRating(trackUri) ?? 0.0) <= parseFloat(settings.skipThreshold)) {
+
+        const skip =
+            (trackUri in ratings && settings.play === "onlyunrated") ||
+            (!(trackUri in ratings) && settings.play === "onlyrated") ||
+            (settings.skipThreshold !== "disabled" && (getTrackRating(trackUri) ?? 0.0) <= parseFloat(settings.skipThreshold));
+
+        if (skip) {
             Spicetify.Player.next();
             return;
         }

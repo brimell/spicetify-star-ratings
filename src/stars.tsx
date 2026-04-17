@@ -1,17 +1,31 @@
 import { settings } from "./app";
 
+/**
+ * Format a rating number as a canonical string key.
+ * Multiples of 0.5 use one decimal place  → "0.5", "1.0", "2.5"
+ * Quarter-step values use two decimal places → "0.25", "1.75", "3.75"
+ */
+export function toRatingString(rating: number): string {
+    if ((rating * 100) % 50 === 0) return rating.toFixed(1);
+    return rating.toFixed(2);
+}
+
 export function findStars(idSuffix: string) {
     const starsId = `stars-${idSuffix}`;
     const stars = document.getElementById(starsId);
     if (!stars) return null;
+
     const starElements = [];
     for (let i = 1; i <= 5; i++) {
         const id = `${starsId}-${i}`;
         const star = document.getElementById(id);
-        const stopFirst = document.getElementById(`${id}-gradient-first`);
-        const stopSecond = document.getElementById(`${id}-gradient-second`);
-        starElements.push([star, stopFirst, stopSecond]);
+        const tl = document.getElementById(`${id}-tl`);
+        const bl = document.getElementById(`${id}-bl`);
+        const tr = document.getElementById(`${id}-tr`);
+        const br = document.getElementById(`${id}-br`);
+        starElements.push([star, tl, bl, tr, br]);
     }
+
     const label = stars.querySelector(".stars-rating-label") as HTMLSpanElement | null;
     return [stars, starElements, label];
 }
@@ -30,35 +44,47 @@ function createStar(starsId: string, n: number, size: number) {
     const defs = document.createElementNS(xmlns, "defs");
     star.append(defs);
 
-    const gradient = document.createElementNS(xmlns, "linearGradient");
-    defs.append(gradient);
-    gradient.id = `${id}-gradient`;
+    const starPathD =
+        "M20.388,10.918L32,12.118l-8.735,7.749L25.914,31.4l-9.893-6.088L6.127,31.4l2.695-11.533L0,12.118l11.547-1.2L16.026,0.6L20.388,10.918z";
 
-    const stopFirst = document.createElementNS(xmlns, "stop");
-    gradient.append(stopFirst);
-    stopFirst.id = `${id}-gradient-first`;
-    stopFirst.setAttributeNS(null, "offset", "50%");
-    stopFirst.setAttributeNS(null, "stop-color", "var(--spice-button-disabled)");
+    // Split vertically at x=16 and horizontally at y=16 (in 32×32 viewBox space)
+    const quadrants = [
+        { name: "tl", x: 0, y: 0, w: 16, h: 16 },
+        { name: "bl", x: 0, y: 16, w: 16, h: 16 },
+        { name: "tr", x: 16, y: 0, w: 16, h: 16 },
+        { name: "br", x: 16, y: 16, w: 16, h: 16 },
+    ] as const;
 
-    const stopSecond = document.createElementNS(xmlns, "stop");
-    gradient.append(stopSecond);
-    stopSecond.id = `${id}-gradient-second`;
-    stopSecond.setAttributeNS(null, "offset", "50%");
-    stopSecond.setAttributeNS(null, "stop-color", "var(--spice-button-disabled)");
+    const paths: SVGPathElement[] = [];
 
-    const path = document.createElementNS(xmlns, "path");
-    star.append(path);
-    path.setAttributeNS(null, "fill", `url(#${gradient.id})`);
-    path.setAttributeNS(
-        null,
-        "d",
-        "M20.388,10.918L32,12.118l-8.735,7.749L25.914,31.4l-9.893-6.088L6.127,31.4l2.695-11.533L0,12.118l11.547-1.2L16.026,0.6L20.388,10.918z",
-    );
+    for (const q of quadrants) {
+        const clipId = `${id}-clip-${q.name}`;
 
-    return [star, stopFirst, stopSecond];
+        const clipPath = document.createElementNS(xmlns, "clipPath");
+        clipPath.id = clipId;
+
+        const rect = document.createElementNS(xmlns, "rect");
+        rect.setAttributeNS(null, "x", `${q.x}`);
+        rect.setAttributeNS(null, "y", `${q.y}`);
+        rect.setAttributeNS(null, "width", `${q.w}`);
+        rect.setAttributeNS(null, "height", `${q.h}`);
+        clipPath.append(rect);
+        defs.append(clipPath);
+
+        const path = document.createElementNS(xmlns, "path");
+        path.id = `${id}-${q.name}`;
+        path.setAttributeNS(null, "clip-path", `url(#${clipId})`);
+        path.setAttributeNS(null, "fill", "var(--spice-button-disabled)");
+        path.setAttributeNS(null, "d", starPathD);
+        star.append(path);
+        paths.push(path);
+    }
+
+    // paths order: [tl, bl, tr, br]
+    return [star, paths[0], paths[1], paths[2], paths[3]] as const;
 }
 
-export function createStars(trackURI: string, size: number): [HTMLSpanElement, (SVGSVGElement | SVGStopElement)[][], HTMLSpanElement | undefined] {
+export function createStars(trackURI: string, size: number): [HTMLSpanElement, (SVGSVGElement | SVGPathElement)[][], HTMLSpanElement | undefined] {
     const stars = document.createElement("span");
     const id = `stars-${trackURI}`;
     stars.className = "stars";
@@ -69,14 +95,13 @@ export function createStars(trackURI: string, size: number): [HTMLSpanElement, (
 
     const starElements = [];
     for (let i = 0; i < 5; i++) {
-        const [star, stopFirst, stopSecond] = createStar(id, i + 1, size);
+        const [star, tl, bl, tr, br] = createStar(id, i + 1, size);
         stars.append(star);
-        starElements.push([star, stopFirst, stopSecond]);
+        starElements.push([star, tl, bl, tr, br]);
     }
 
-    let label = undefined;
+    let label: HTMLSpanElement | undefined = undefined;
     if (settings?.showExactRating) {
-        // label next to stars
         label = document.createElement("span");
         label.className = "stars-rating-label";
         label.style.marginLeft = "6px";
@@ -88,39 +113,72 @@ export function createStars(trackURI: string, size: number): [HTMLSpanElement, (
     return [stars, starElements, label];
 }
 
-export function setRating(starElements: (SVGSVGElement | SVGStopElement)[][], rating: number, label?: HTMLElement) {
+export function setRating(starElements: (SVGSVGElement | SVGPathElement)[][], rating: number, label?: HTMLElement) {
     if (settings?.showExactRating && label && rating) label.textContent = rating.toFixed(2);
 
-    // round to nearest half-star
-    const halfStars = Math.round((rating /= 0.5));
-    for (let i = 0; i < 5; i++) {
-        const stopFirst = starElements[i][1];
-        const stopSecond = starElements[i][2];
-        stopFirst.setAttributeNS(null, "stop-color", "var(--spice-button-disabled)");
+    const totalQUnits = Math.round(rating * 4);
 
-        stopSecond.setAttributeNS(null, "stop-color", "var(--spice-button-disabled)");
-    }
-    for (let i = 0; i < halfStars; i++) {
-        const j = Math.floor(i / 2);
-        const stopFirst = starElements[j][1];
-        const stopSecond = starElements[j][2];
-        if (i % 2 === 0) {
-            stopFirst.setAttributeNS(null, "stop-color", "var(--spice-button)");
+    const on = "var(--spice-button)";
+    const off = "var(--spice-button-disabled)";
+
+    for (let i = 0; i < 5; i++) {
+        const [, tlPath, blPath, trPath, brPath] = starElements[i];
+        const starBase = i * 4;
+
+        // Quarter-units filled within this individual star (0–4)
+        const filled = Math.max(0, Math.min(4, totalQUnits - starBase));
+
+        if (settings?.quarterStarRatings) {
+            // Fill order: BL → TL → TR → BR
+            (blPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 1 ? on : off);
+            (tlPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 2 ? on : off);
+            (trPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 3 ? on : off);
+            (brPath as SVGPathElement).setAttributeNS(null, "fill", filled >= 4 ? on : off);
+        } else if (settings?.halfStarRatings) {
+            // Left half = TL+BL, right half = TR+BR
+            // Snap filled to nearest even count (i.e. nearest half-star boundary)
+            const halfFilled = Math.round(filled / 2);
+            (tlPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 1 ? on : off);
+            (blPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 1 ? on : off);
+            (trPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 2 ? on : off);
+            (brPath as SVGPathElement).setAttributeNS(null, "fill", halfFilled >= 2 ? on : off);
         } else {
-            stopSecond.setAttributeNS(null, "stop-color", "var(--spice-button)");
+            // Whole stars
+            const isLit = i < Math.round(rating);
+            (tlPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? on : off);
+            (blPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? on : off);
+            (trPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? on : off);
+            (brPath as SVGPathElement).setAttributeNS(null, "fill", isLit ? on : off);
         }
     }
 }
 
 export function getMouseoverRating(settings, star, i) {
     const rect = star.getBoundingClientRect();
-    const offset = event.clientX - rect.left;
-    const half = offset > 8 || !settings.halfStarRatings;
-    const zeroStars = i === 0 && offset < 3;
-    let rating = i + 1;
-    if (!half) rating -= 0.5;
-    if (zeroStars) {
-        rating -= settings.halfStarRatings ? 0.5 : 1.0;
+    const offsetX = (event as MouseEvent).clientX - rect.left;
+    const offsetY = (event as MouseEvent).clientY - rect.top;
+
+    const isRight = offsetX > rect.width / 2;
+    const isTop = offsetY < rect.height / 2;
+
+    if (settings.quarterStarRatings) {
+        // Very left edge of the first star → 0 stars
+        if (i === 0 && offsetX < 3) return 0;
+
+        // Quadrant → rating offset within star
+        // BL = +0.25, TL = +0.50, TR = +0.75, BR = +1.00
+        if (!isRight && !isTop) return i + 0.25; // BL
+        if (!isRight && isTop) return i + 0.5; // TL
+        if (isRight && isTop) return i + 0.75; // TR
+        return i + 1.0; // BR
+    } else {
+        const half = isRight || !settings.halfStarRatings;
+        const zeroStars = i === 0 && offsetX < 3;
+        let rating = i + 1;
+        if (!half) rating -= 0.5;
+        if (zeroStars) {
+            rating -= settings.halfStarRatings ? 0.5 : 1.0;
+        }
+        return rating;
     }
-    return rating;
 }

@@ -34,6 +34,10 @@ export async function createPlaylist(name: string, folderUri: string) {
             ? { after: folderUri }
             : { after: { uri: folderUri } };
 
+    // try platformAPI first, fall back to api.spotify.com
+    const platformAPI = getRootlistAPI()?.createPlaylist(name, options);
+    if (platformAPI) return platformAPI;
+
     const username = (Spicetify as any).User?.getUsername?.() ?? Spicetify.Platform.username;
 
     return await Spicetify.CosmosAsync.post(`https://api.spotify.com/v1/users/${username}/playlists`, {
@@ -138,17 +142,25 @@ export async function getTracksWithSameISRC(uri: string) {
 
 export async function getLikedSongsTracks(): Promise<Array<{ uri: string; link: string }>> {
     // LibraryAPI may not exist, but using the official API causes ratelimit hits
-    const res = await getLibraryAPI().getTracks({ limit: 9999 });
+    const res = await getLibraryAPI().getTracks({ limit: -1 }); // this seems to get all tracks (at least >1300)
     const array = res?.items ?? [];
 
     return array.map((item) => ({ uri: item.uri, link: item.uri }));
 }
 
-export async function getPlaylist(playlistUri: string) {
+export async function getPlaylistMetadata(playlistUri: string) {
+    // try platformAPI first, fall back to api.spotify.com
+    const platformMetadata = await getPlaylistAPI()?.getMetadata(playlistUri);
+    if (platformMetadata) return platformMetadata;
+
     const playlistId = playlistUri.split(":").pop();
     return await Spicetify.CosmosAsync.get(`https://api.spotify.com/v1/playlists/${playlistId}`);
 }
 
 export async function addTracksToPlaylist(playlistUri: string, trackUris: string[]) {
-    await getPlaylistAPI().add(playlistUri, trackUris, { after: 1, before: 0 });
+    await getPlaylistAPI().add(playlistUri, trackUris, { before: 1, after: 0 });
+}
+
+export async function moveToFront(playlistUri: string, uid: string) {
+    await getPlaylistAPI().move(playlistUri, [{ uid: uid }], { insert_before: 0 });
 }
