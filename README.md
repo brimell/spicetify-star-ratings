@@ -1,4 +1,4 @@
-# Spicetify Star Ratings
+# Spicetify Star Ratings NO LONGER BEING MAINTAINED (sorry: please check out forks)
 Add star ratings to Spotify
 
 ![banner](/imgs/preview.png)
