@@ -1,20 +1,13 @@
-## Fork
-This fork exists mostly for my changes to this project, but as the original seems to be sparsely maintained, feel free to open issues or chime in with ideas here :)
-
-See [here](https://github.com/brimell/spicetify-star-ratings/compare/main...jullanggit:spicetify-star-ratings:main?expand=1) for changes that haven't yet made it into upstream.
-
-## Installation
-```
-curl -L https://raw.githubusercontent.com/jullanggit/spicetify-star-ratings/refs/heads/main/dist/star-ratings.js \
- -o "$(spicetify path -e)/star-ratings.js" \
- && spicetify config extensions star-ratings.js \
- && spicetify backup apply
-```
-
-# Spicetify Star Ratings
+# Spicetify Star Ratings NO LONGER BEING MAINTAINED (sorry: please check out forks)
 Add star ratings to Spotify
 
 ![banner](/imgs/preview.png)
+
+## Install
+
+1. Install [Spicetify](https://spicetify.app)
+2. Install "Star Ratings" from the Marketplace
+   <img src="imgs/install.png" height="600px" alt="install">
 
 ## Settings
 
@@ -80,8 +73,6 @@ If the new rating is the same as the old one, the old rating is removed. If they
 https://github.com/jeroentvb/spicetify-playlist-icons provides a nice view of the playlist icons when you are adding to them manually ![alt text](imgs/example.png)
 
 ## Credits
-
-*Forked from [brimell's Spicetify Star Ratings](https://github.com/brimell/spicetify-star-ratings)*
 
 *Forked from [Duffey's Spicetify Star Ratings](https://github.com/duffey/spicetify-star-ratings) (archived)*
 
