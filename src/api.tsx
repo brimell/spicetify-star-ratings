@@ -101,8 +101,8 @@ export async function getPlaylistItems(uri: string) {
 }
 
 export async function isAppLaterThan(specifiedVersion: string) {
-    let appInfo = await Spicetify.CosmosAsync.get("sp://desktop/v1/version");
-    let result = appInfo.version.localeCompare(specifiedVersion, undefined, { numeric: true, sensitivity: "base" });
+    let version = Spicetify.Platform.version ?? (await Spicetify.CosmosAsync.get("sp://desktop/v1/version")).version;
+    let result = version.localeCompare(specifiedVersion, undefined, { numeric: true, sensitivity: "base" });
     return result === 1;
 }
 
