@@ -149,7 +149,11 @@ export async function sortPlaylistByRating(playlistUri: string, ratings: Ratings
     if (items.length < 2) return;
 
     const sorted = items
-        .map((item, idx) => ({ uid: item.rowId, rating: getTrackRatingOrDefault(item.link ?? item.uri), idx }))
+        .map((item, idx) => ({
+            uid: item.uid ?? item.rowId,
+            rating: getTrackRatingOrDefault(item.link ?? item.uri),
+            idx,
+        }))
         .sort((a, b) => b.rating - a.rating || a.idx - b.idx)
         .map((item) => item.uid);
 
