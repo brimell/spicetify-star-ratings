@@ -13,6 +13,7 @@
         packages = with pkgs; [
           nodejs_24
           vtsls
+          spicetify-cli
         ];
       };
     };
