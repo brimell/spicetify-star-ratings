@@ -1,7 +1,8 @@
 import * as api from "./api";
 import { getTrackRating, getTrackRatingOrDefault } from "./app";
-import { TracksByRatings, PlaylistUris, Ratings, TimestampedRating } from "./types/store";
+import { PlaylistUris, Ratings, TimestampedRating, Track } from "./types/store";
 interface Contents {
+    uri?: string;
     items: [
         {
             type: string;
@@ -11,59 +12,81 @@ interface Contents {
     ];
 }
 
-export function findFolderByUri(contents: Contents, uri: string) {
-    return contents.items.find((item) => item.type === "folder" && item.uri === uri);
+export function findFolderByUri(contents: Contents, uri: string): Contents | undefined {
+    // A folder item in the Spotify rootlist has its own .items sub-array at runtime,
+    // so it structurally satisfies Contents even though the interface tuple does not declare it.
+    return contents.items.find((item) => item.type === "folder" && item.uri === uri) as Contents | undefined;
 }
 
-export function findFolderByName(contents: Contents, name: string) {
-    return contents.items.find((item) => item.type === "folder" && item.name === name);
+export function findFolderByName(contents: Contents, name: string): Contents | undefined {
+    return contents.items.find((item) => item.type === "folder" && item.name === name) as Contents | undefined;
 }
 
-export function removePlaylistUris(playlistUris: PlaylistUris, ratedFolder: Contents): [boolean, PlaylistUris] {
-    const newPlaylistUris: PlaylistUris = {};
-    let changed = false;
-    for (const [rating, playlistUri] of Object.entries(playlistUris)) {
-        if (ratedFolder.items.find((item) => item.uri === playlistUri)) newPlaylistUris[rating] = playlistUri;
-        else changed = true;
+/**
+ * Parse a rating playlist name into a base rating and a 1-based version number.
+ *
+ * Supported formats:
+ *   "4.5"    -> { rating: "4.5", version: 1 }   (first / only playlist)
+ *   "4.5(1)" -> { rating: "4.5", version: 2 }   (first spillover)
+ *   "4.5(2)" -> { rating: "4.5", version: 3 }   (second spillover)
+ *
+ * Returns null if the name does not match.
+ */
+export function parseRatingPlaylistName(name: string): { rating: string; version: number } | null {
+    // Base name with no suffix: "4.5"
+    const baseMatch = name.match(/^(\d+(?:\.\d+)?)$/);
+    if (baseMatch) return { rating: baseMatch[1], version: 1 };
+    // Spillover suffix: "4.5(1)", "4.5(2)", …
+    const overflowMatch = name.match(/^(\d+(?:\.\d+)?)\((\d+)\)$/);
+    if (overflowMatch) return { rating: overflowMatch[1], version: parseInt(overflowMatch[2]) + 1 };
+    return null;
+}
+
+/**
+ * Build a PlaylistUris map by scanning the contents of the rated folder.
+ * Playlists are grouped by base rating and sorted by version (ascending),
+ * so the last element in each array is always the newest / highest-version playlist.
+ */
+export function buildPlaylistUris(ratedFolder: Contents): PlaylistUris {
+    const grouped: { [rating: string]: { uri: string; version: number }[] } = {};
+
+    for (const item of ratedFolder.items) {
+        if (item.type !== "playlist") continue;
+        const parsed = parseRatingPlaylistName(item.name);
+        if (!parsed) continue;
+        if (!grouped[parsed.rating]) grouped[parsed.rating] = [];
+        grouped[parsed.rating].push({ uri: item.uri, version: parsed.version });
     }
-    return [changed, newPlaylistUris];
+
+    const result: PlaylistUris = {};
+    for (const [rating, items] of Object.entries(grouped)) {
+        result[rating] = items.sort((a, b) => a.version - b.version).map((i) => i.uri);
+    }
+    return result;
 }
 
-function isFloatPlaylistName(name: string): boolean {
-    // Accept plain decimal rating playlist names like 3, 3.5, 4.25, 4.333.
-    return /^\d+(?:\.\d+)?$/.test(name);
-}
-
-export function addPlaylistUris(playlistUris: PlaylistUris, ratedFolder: Contents): [boolean, PlaylistUris] {
-    const newPlaylistUris: PlaylistUris = { ...playlistUris };
-    let changed = false;
+export function getPlaylistNames(playlistUris: PlaylistUris, ratedFolder: Contents): Record<string, string> {
+    const allUris = new Set(Object.values(playlistUris).flat());
+    const playlistNames: Record<string, string> = {};
     ratedFolder.items
-        .filter((item) => item.type === "playlist" && isFloatPlaylistName(item.name))
-        .forEach((item) => {
-            if (newPlaylistUris[item.name] !== item.uri) {
-                newPlaylistUris[item.name] = item.uri;
-                changed = true;
-            }
-        });
-    return [changed, newPlaylistUris];
-}
-
-export function getPlaylistNames(playlistUris: PlaylistUris, ratedFolder: Contents): PlaylistUris {
-    const playlistNames: PlaylistUris = {};
-    ratedFolder.items
-        .filter((item) => Object.values(playlistUris).includes(item.uri))
+        .filter((item) => allUris.has(item.uri))
         .forEach((item) => {
             playlistNames[item.uri] = item.name;
         });
     return playlistNames;
 }
 
-export async function getAllPlaylistItems(playlistUris: PlaylistUris): Promise<TracksByRatings> {
-    const ratings = Object.keys(playlistUris);
-    const allPlaylistItemsArray = await Promise.all(ratings.map((rating) => api.getPlaylistItems(playlistUris[rating])));
-    const allPlaylistItems: TracksByRatings = {};
-    for (let i = 0; i < ratings.length; i++) allPlaylistItems[ratings[i]] = allPlaylistItemsArray[i];
-    return allPlaylistItems;
+type PlaylistItemsEntry = { rating: string; playlistUri: string; tracks: Track[] };
+
+export async function getAllPlaylistItems(playlistUris: PlaylistUris): Promise<PlaylistItemsEntry[]> {
+    const entries: { rating: string; playlistUri: string }[] = [];
+    for (const [rating, uris] of Object.entries(playlistUris)) {
+        for (const playlistUri of uris) {
+            entries.push({ rating, playlistUri });
+        }
+    }
+    const trackArrays = await Promise.all(entries.map((e) => api.getPlaylistItems(e.playlistUri)));
+    return entries.map((e, i) => ({ ...e, tracks: trackArrays[i] }));
 }
 
 function normalizeTrackRatings(entries: TimestampedRating[]): TimestampedRating[] {
@@ -93,13 +116,18 @@ function normalizeTrackRatings(entries: TimestampedRating[]): TimestampedRating[
     return normalized.sort((a, b) => b.time.getTime() - a.time.getTime());
 }
 
-export function getRatingsByTrack(allPlaylistItems: TracksByRatings): Ratings {
-    const ratingsByTrack: Ratings = {};
+export function getRatingsByTrack(allPlaylistItems: PlaylistItemsEntry[]): Ratings {
+    const ratingsByTrack: { [trackUri: string]: TimestampedRating[] } = {};
 
-    for (const [rating, tracks] of Object.entries(allPlaylistItems)) {
+    for (const { rating, playlistUri, tracks } of allPlaylistItems) {
         for (const track of tracks) {
             const trackUri = track.link ?? track.uri;
-            const entry: TimestampedRating = { rating, time: new Date(track.addedAt), uid: track.uid };
+            const entry: TimestampedRating = {
+                rating,
+                time: new Date(track.addedAt),
+                uid: track.uid,
+                playlistUri,
+            };
 
             if (!ratingsByTrack[trackUri]) {
                 ratingsByTrack[trackUri] = [entry];

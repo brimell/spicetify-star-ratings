@@ -1,14 +1,13 @@
 import * as api from "./api";
 import { createStars, setRating, getMouseoverRating, findStars, toRatingString } from "./stars";
-import { Settings, getSettings, saveSettings, getPlaylistUris, savePlaylistUris, getRatedFolderUri, saveRatedFolderUri } from "./settings";
+import { Settings, getSettings, saveSettings, getRatedFolderUri, saveRatedFolderUri } from "./settings";
 import { Settings as SettingsUi } from "./settings-ui";
 import { SortModal } from "./sort-modal";
 import { WeightedPlaylistModal } from "./weighted-playlist-modal";
 import {
     findFolderByName,
     findFolderByUri,
-    addPlaylistUris,
-    removePlaylistUris,
+    buildPlaylistUris,
     getAllPlaylistItems,
     getRatingsByTrack,
     getPlaylistNames,
@@ -58,10 +57,6 @@ let ratingsLoading = false;
 let isSorting = false;
 
 const PLAYLIST_SIZE_LIMIT = 8000; // Maximum tracks per playlist
-
-interface PlaylistItems {
-    length: number;
-}
 
 export function getTrackRating(trackUri: string): number | null {
     const rating = ratings[trackUri];
@@ -356,12 +351,14 @@ function updateAlbumRating() {
 }
 
 async function handleRemoveRating(trackUri: string, rating: string, uid?: string) {
-    const playlistUri = playlistUris[rating];
-    const playlistName = playlistNames[playlistUri];
-    await api.removeTrackFromPlaylist(playlistUri, trackUri, uid);
+    const entry =
+        uid != null ? ratings[trackUri]?.find((r) => r.rating === rating && r.uid === uid) : ratings[trackUri]?.find((r) => r.rating === rating);
+    const targetPlaylistUri = entry?.playlistUri ?? (playlistUris[rating] ?? [])[0];
+    const playlistName = playlistNames[targetPlaylistUri] ?? rating;
+    await api.removeTrackFromPlaylist(targetPlaylistUri, trackUri, uid);
 
     if (uid != null) {
-        const index = ratings[trackUri].findIndex((timestampedRating) => timestampedRating.rating === rating && timestampedRating.uid == uid);
+        const index = ratings[trackUri].findIndex((r) => r.rating === rating && r.uid === uid);
         if (index !== -1) {
             ratings[trackUri].splice(index, 1);
         }
@@ -382,64 +379,48 @@ async function handleAddRating(trackUri: string, newRating: string) {
             await api.createFolder("Rated");
             const contents = await api.getContents();
             const ratedFolder = findFolderByName(contents, "Rated");
-            ratedFolderUri = ratedFolder.uri;
+            if (!ratedFolder) throw new Error("Could not find Rated folder after creating it");
+            ratedFolderUri = ratedFolder.uri as string;
             saveRatedFolderUri(ratedFolderUri);
         }
 
-        let playlistUri = playlistUris[newRating];
-        let playlistName = newRating;
+        // The last URI in the array is the newest / highest-version playlist for this rating.
+        const urisForRating = playlistUris[newRating] ?? [];
+        let targetPlaylistUri = urisForRating.length > 0 ? urisForRating[urisForRating.length - 1] : null;
 
-        // If no playlist exists for this rating, create the first one
-        if (!playlistUri) {
-            playlistUri = await api.createPlaylist(playlistName, ratedFolderUri);
-            await api.makePlaylistPrivate(playlistUri);
-            playlistUris[newRating] = playlistUri;
-            savePlaylistUris(playlistUris);
-            playlistNames[playlistUri] = playlistName;
+        if (!targetPlaylistUri) {
+            // No playlist exists for this rating yet — create the first one (no version suffix).
+            targetPlaylistUri = await api.createPlaylist(newRating, ratedFolderUri);
+            await api.makePlaylistPrivate(targetPlaylistUri);
+            playlistUris[newRating] = [targetPlaylistUri];
+            playlistNames[targetPlaylistUri] = newRating;
         } else {
-            // Check if current playlist is at capacity
-            const items = (await api.getPlaylistItems(playlistUri)) as PlaylistItems;
-
+            // Check whether the current latest playlist is at capacity.
+            const items = await api.getPlaylistItems(targetPlaylistUri);
             if (items.length >= PLAYLIST_SIZE_LIMIT) {
-                // Find the next available suffix number
-                let suffix = 1;
-                let newPlaylistUri;
-
-                while (true) {
-                    try {
-                        const newPlaylistName = `${newRating}(${suffix})`;
-                        newPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
-                        await api.makePlaylistPrivate(newPlaylistUri);
-                        break;
-                    } catch (e) {
-                        suffix++;
-                        if (suffix > 100) {
-                            throw new Error("Unable to create overflow playlist");
-                        }
-                    }
-                }
-
-                // Update playlist mappings
-                playlistUri = newPlaylistUri;
-                playlistUris[newRating] = newPlaylistUri;
-                savePlaylistUris(playlistUris);
-                playlistNames[newPlaylistUri] = `${newRating}(${suffix})`;
+                // Create the next spillover: "4.5" -> "4.5(1)" -> "4.5(2)" …
+                // The suffix is urisForRating.length because the base playlist counts as slot 0.
+                const newPlaylistName = `${newRating}(${urisForRating.length})`;
+                targetPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
+                await api.makePlaylistPrivate(targetPlaylistUri);
+                playlistUris[newRating] = [...urisForRating, targetPlaylistUri];
+                playlistNames[targetPlaylistUri] = newPlaylistName;
             }
         }
 
-        // Add the track to the playlist
-        await api.addTrackToPlaylist(playlistUri, trackUri);
+        // Add the track to the playlist.
+        await api.addTrackToPlaylist(targetPlaylistUri, trackUri);
 
-        // re-fetch ratings to include the newest one and its uid
+        // Re-fetch ratings to capture the new entry's uid.
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatingsByTrack(allPlaylistItems);
 
-        // move new rating to the front
+        // Move the new rating entry to the front of its playlist.
         const latestRatingUid = ratings[trackUri].reduce((prev, current) => (current.time > prev.time ? current : prev)).uid;
-        await api.moveToFront(playlistUri, latestRatingUid);
+        await api.moveToFront(targetPlaylistUri, latestRatingUid);
 
-        // Show notification
-        const displayName = playlistNames[playlistUri];
+        // Show notification.
+        const displayName = playlistNames[targetPlaylistUri];
         api.showNotification(`Added to ${displayName}`);
     } catch (error) {
         console.error("Error in handleAddRating:", error);
@@ -852,46 +833,26 @@ function shouldAddContextMenuOnPlaylists(uri) {
 }
 
 async function loadRatings() {
-    ratedFolderUri = getRatedFolderUri();
     ratings = {};
     playlistNames = {};
-    playlistUris = getPlaylistUris();
-    let ratedFolder = null;
+    playlistUris = {};
 
-    if (ratedFolderUri) {
-        const contents = await api.getContents();
-        ratedFolder = findFolderByUri(contents, ratedFolderUri);
-    } else {
-        // TODO: Remove after next release
-        const contents = await api.getContents();
-        ratedFolder = findFolderByName(contents, "Rated");
-        if (ratedFolder) {
-            ratedFolderUri = ratedFolder.uri;
-            saveRatedFolderUri(ratedFolderUri);
-        }
-    }
+    const contents = await api.getContents();
+    // Prefer a previously set folder URI (e.g. via "Use as Rated folder" context menu),
+    // falling back to discovering the folder by its default name.
+    const ratedFolder = ratedFolderUri
+        ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
+        : findFolderByName(contents, "Rated");
 
     if (ratedFolder) {
-        // Remove any playlist URIs associated with the rated folder
-        let playlistUrisRemoved = false;
-        [playlistUrisRemoved, playlistUris] = removePlaylistUris(playlistUris, ratedFolder);
-
-        // Add any new playlist URIs associated with the rated folder
-        let playlistUrisAdded = false;
-        [playlistUrisAdded, playlistUris] = addPlaylistUris(playlistUris, ratedFolder);
-
-        // If any playlist URIs were added or removed, save the updated list
-        if (playlistUrisAdded || playlistUrisRemoved) savePlaylistUris(playlistUris);
-
+        ratedFolderUri = ratedFolder.uri as string;
+        // Dynamically build the playlist URI map by scanning the folder contents.
+        playlistUris = buildPlaylistUris(ratedFolder);
         const allPlaylistItems = await getAllPlaylistItems(playlistUris);
         ratings = getRatingsByTrack(allPlaylistItems);
-
         playlistNames = getPlaylistNames(playlistUris, ratedFolder);
-    } else if (Object.keys(playlistUris).length > 0) {
-        playlistUris = {};
-        savePlaylistUris(playlistUris);
-        ratedFolderUri = "";
-        saveRatedFolderUri(ratedFolderUri);
+    } else {
+        ratedFolderUri = null;
     }
 }
 
@@ -902,6 +863,9 @@ async function main() {
 
     settings = getSettings();
     saveSettings(settings);
+
+    // Restore the previously-saved rated folder URI so loadRatings can find the right folder.
+    ratedFolderUri = getRatedFolderUri();
 
     await loadRatings();
 

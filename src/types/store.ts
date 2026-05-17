@@ -3,9 +3,9 @@ export type TracksByRatings = {
 };
 
 export interface PlaylistUris {
-    [key: string]: string;
+    [key: string]: string[]; // rating -> playlist uris (last = latest)
 }
-export type TimestampedRating = { rating: string; time: Date; uid: string; };
+export type TimestampedRating = { rating: string; time: Date; uid: string; playlistUri: string; };
 export interface Ratings {
     [key: string]: TimestampedRating[];
 }
