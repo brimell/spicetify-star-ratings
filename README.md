@@ -68,9 +68,12 @@ If the new rating is the same as the old one, the old rating is removed. If they
 
 <br>
 
-# Playlist Icons Recommendation
+## Playlist Icons Recommendation
 
 https://github.com/jeroentvb/spicetify-playlist-icons provides a nice view of the playlist icons when you are adding to them manually ![alt text](imgs/example.png)
+
+## It Doesn't Work!
+Please [open an issue](https://github.com/brimell/spicetify-star-ratings/issues/new), we want this extension to work as smoothly as possible!
 
 ## Credits
 
