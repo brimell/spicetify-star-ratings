@@ -374,32 +374,37 @@ async function handleRemoveRating(trackUri: string, rating: string, uid?: string
 
 async function handleAddRating(trackUri: string, newRating: string) {
     try {
-        // Create a 'Rated' folder if it doesn't exist
-        if (!ratedFolderUri) {
+        const contents = await api.getContents(); // get fresh contents
+
+        let ratedFolder = ratedFolderUri
+            ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
+            : findFolderByName(contents, "Rated");
+
+        if (!ratedFolder) {
             await api.createFolder("Rated");
             const contents = await api.getContents();
-            const ratedFolder = findFolderByName(contents, "Rated");
+            ratedFolder = findFolderByName(contents, "Rated");
             if (!ratedFolder) throw new Error("Could not find Rated folder after creating it");
+            ratedFolderUri = ratedFolder.uri as string;
+            saveRatedFolderUri(ratedFolderUri);
+        } else if (!ratedFolderUri) {
             ratedFolderUri = ratedFolder.uri as string;
             saveRatedFolderUri(ratedFolderUri);
         }
 
-        // The last URI in the array is the newest / highest-version playlist for this rating.
+        playlistUris = buildPlaylistUris(ratedFolder); // get current playlist uris
         const urisForRating = playlistUris[newRating] ?? [];
         let targetPlaylistUri = urisForRating.length > 0 ? urisForRating[urisForRating.length - 1] : null;
 
         if (!targetPlaylistUri) {
-            // No playlist exists for this rating yet — create the first one (no version suffix).
             targetPlaylistUri = await api.createPlaylist(newRating, ratedFolderUri);
             await api.makePlaylistPrivate(targetPlaylistUri);
             playlistUris[newRating] = [targetPlaylistUri];
             playlistNames[targetPlaylistUri] = newRating;
         } else {
-            // Check whether the current latest playlist is at capacity.
             const items = await api.getPlaylistItems(targetPlaylistUri);
             if (items.length >= PLAYLIST_SIZE_LIMIT) {
-                // Create the next spillover: "4.5" -> "4.5(1)" -> "4.5(2)" …
-                // The suffix is urisForRating.length because the base playlist counts as slot 0.
+                // next spillover
                 const newPlaylistName = `${newRating}(${urisForRating.length})`;
                 targetPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
                 await api.makePlaylistPrivate(targetPlaylistUri);
@@ -408,23 +413,19 @@ async function handleAddRating(trackUri: string, newRating: string) {
             }
         }
 
-        // Add the track to the playlist.
         await api.addTrackToPlaylist(targetPlaylistUri, trackUri);
 
-        // Re-fetch ratings to capture the new entry's uid.
-        const allPlaylistItems = await getAllPlaylistItems(playlistUris);
-        ratings = getRatingsByTrack(allPlaylistItems);
+        // refresh state to maintain consistency
+        await loadRatings();
 
         // Move the new rating entry to the front of its playlist.
-        const latestRatingUid = ratings[trackUri].reduce((prev, current) => (current.time > prev.time ? current : prev)).uid;
-        await api.moveToFront(targetPlaylistUri, latestRatingUid);
+        const latestRatingUid = ratings[trackUri]?.reduce((prev, current) => (current.time > prev.time ? current : prev))?.uid;
+        if (latestRatingUid) await api.moveToFront(targetPlaylistUri, latestRatingUid);
 
-        // Show notification.
-        const displayName = playlistNames[targetPlaylistUri];
-        api.showNotification(`Added to ${displayName}`);
+        api.showNotification(`Added to ${playlistNames[targetPlaylistUri] ?? newRating}`);
     } catch (error) {
         console.error("Error in handleAddRating:", error);
-        api.showNotification("Error updating rating: " + (error.message || "Unknown error"));
+        api.showNotification("Error updating rating: " + ((error as any).message || "Unknown error"));
     }
 }
 
