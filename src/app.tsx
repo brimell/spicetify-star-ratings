@@ -560,6 +560,13 @@ function restoreTracklist() {
     const tracklistHeaders = document.querySelectorAll(".main-trackList-trackListHeaderRow");
     tracklistHeaders.forEach((tracklistHeader) => {
         tracklistHeader.style["grid-template-columns"] = originalTracklistHeaderCss;
+        const ratingHeader = tracklistHeader.querySelector(".starRatingsHeader");
+        if (ratingHeader) {
+            ratingHeader.remove();
+            let lastColumn = tracklistHeader.querySelector(".main-trackList-rowSectionEnd");
+            let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
+            lastColumn.setAttribute("aria-colindex", (colIndexInt - 1).toString());
+        }
     });
 
     for (const tracklist of Array.from(tracklists)) {
@@ -609,6 +616,8 @@ function createStarsForTracklists(tracklists: HTMLCollectionOf<Element>) {
     const tracklistHeaders = document.querySelectorAll(".main-trackList-trackListHeaderRow");
     // No tracklist header on Artist page
     tracklistHeaders.forEach((tracklistHeader) => {
+        if (tracklistHeader.querySelector(".starRatingsHeader")) return; // already injected
+
         let lastColumn = tracklistHeader.querySelector(".main-trackList-rowSectionEnd");
         let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
 
@@ -618,6 +627,27 @@ function createStarsForTracklists(tracklists: HTMLCollectionOf<Element>) {
             tracklistHeader.style["grid-template-columns"] = tracklistColumnCss[colIndexInt];
             newTracklistHeaderCss = tracklistColumnCss[colIndexInt];
         }
+
+        // Inject a header cell at the same column position as the stars cells in track rows
+        lastColumn.setAttribute("aria-colindex", (colIndexInt + 1).toString());
+        const ratingHeader = document.createElement("div");
+        ratingHeader.setAttribute("aria-colindex", colIndexInt.toString());
+        ratingHeader.role = "columnheader";
+        ratingHeader.style.display = "flex";
+        ratingHeader.style.alignItems = "center";
+        ratingHeader.classList.add("main-trackList-rowSectionVariable");
+        ratingHeader.classList.add("starRatingsHeader");
+        const ratingHeaderLabel = document.createElement("span");
+        ratingHeaderLabel.textContent = "Ratings";
+        const existingLabel = tracklistHeader.querySelector("[role='columnheader'] span");
+        if (existingLabel) {
+            ratingHeaderLabel.className = existingLabel.className;
+            for (const attr of Array.from(existingLabel.attributes)) {
+                if (attr.name !== "class") ratingHeaderLabel.setAttribute(attr.name, attr.value);
+            }
+        }
+        ratingHeader.appendChild(ratingHeaderLabel);
+        tracklistHeader.insertBefore(ratingHeader, lastColumn);
     });
 
     // Iterate through each tracklist
