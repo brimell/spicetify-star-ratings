@@ -45,6 +45,7 @@ export interface Settings {
     showExactRating: boolean;
     ratingToWeight: Scaling;
     play: Play;
+    ratingPlaylistTemplate: string;
 }
 
 const defaultSettings: Settings = {
@@ -62,6 +63,7 @@ const defaultSettings: Settings = {
     showExactRating: false,
     ratingToWeight: { kind: "Linear" },
     play: "all",
+    ratingPlaylistTemplate: "{rating}{version}",
 };
 
 export function getSettings(): Settings {

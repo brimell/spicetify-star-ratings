@@ -42,6 +42,15 @@ The canonical rating (used for display and random sampling) is calculated using 
 As a safeguard and to allow ad-hoc changes of mind, any re-ratings within a five minute window behave like a non-averaged rating:
 If the new rating is the same as the old one, the old rating is removed. If they are different, the new rating replaces the old one.
 
+## Custom Rating Playlist Names
+Rating playlist names can be customized in the settings using a simple template.
+In this template, `{rating}` is replaced by the playlist's rating, and `{version}` is replaced by the playlist's spillover version, in parentheses. If the playlist is not a spillover playlists, `{version}` is replaced by an empty string.
+### Examples
+| Template | Result |
+|----------|--------|
+| `{rating}{version}` (the default) | `5.0` or `4.25(2)` |
+| `{rating}/5 stars {version}` | `5.0/5 stars` or `4.25/5 stars (2)` |
+
 ## Star Rating Playlist Images
 
 <table>

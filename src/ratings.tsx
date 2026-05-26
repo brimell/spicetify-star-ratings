@@ -1,5 +1,5 @@
 import * as api from "./api";
-import { getTrackRating, getTrackRatingOrDefault } from "./app";
+import { getTrackRating, getTrackRatingOrDefault, settings } from "./app";
 import { PlaylistUris, Ratings, TimestampedRating, Track } from "./types/store";
 interface Contents {
     uri?: string;
@@ -23,23 +23,54 @@ export function findFolderByName(contents: Contents, name: string): Contents | u
 }
 
 /**
- * Parse a rating playlist name into a base rating and a 1-based version number.
+ * Parse a rating playlist name into a base rating and a 0-based version number, using the supplied template.
  *
- * Supported formats:
- *   "4.5"    -> { rating: "4.5", version: 1 }   (first / only playlist)
- *   "4.5(1)" -> { rating: "4.5", version: 2 }   (first spillover)
- *   "4.5(2)" -> { rating: "4.5", version: 3 }   (second spillover)
+ * With the default template "{rating}{version}"
+ *   "4.5"    -> { rating: "4.5", version: 0 }   (first / only playlist)
+ *   "4.5(1)" -> { rating: "4.5", version: 1 }   (first spillover)
+ *   "4.5(2)" -> { rating: "4.5", version: 2 }   (second spillover)
  *
  * Returns null if the name does not match.
  */
 export function parseRatingPlaylistName(name: string): { rating: string; version: number } | null {
-    // Base name with no suffix: "4.5"
-    const baseMatch = name.match(/^(\d+(?:\.\d+)?)$/);
-    if (baseMatch) return { rating: baseMatch[1], version: 1 };
-    // Spillover suffix: "4.5(1)", "4.5(2)", …
-    const overflowMatch = name.match(/^(\d+(?:\.\d+)?)\((\d+)\)$/);
-    if (overflowMatch) return { rating: overflowMatch[1], version: parseInt(overflowMatch[2]) + 1 };
-    return null;
+    return parseRatingPlaylistNameInner(settings.ratingPlaylistTemplate, name);
+}
+export function parseRatingPlaylistNameInner(template: string, name: string): { rating: string; version: number } | null {
+    // compile regex
+    let regex = "^";
+    let ratingGroup = 0;
+    let versionGroup = 0;
+    let group = 0;
+    for (const token of template.split(/(\{rating\}|\{version\})/)) {
+        if (token === "{rating}") {
+            group++;
+            ratingGroup = group;
+            regex += "(\\d+(?:\\.\\d+)?)";
+        } else if (token === "{version}") {
+            group++;
+            versionGroup = group;
+            regex += "(?:\\((\\d+)\\))?"; // optional: "(1)", "(2)", …
+        } else if (token) {
+            regex += token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        }
+    }
+    regex += "$";
+
+    // match regex
+    const match = name.match(new RegExp(regex));
+    if (!match) return null;
+
+    const rating = match[ratingGroup];
+    const rawVersion = match[versionGroup];
+    return { rating, version: rawVersion !== undefined ? parseInt(rawVersion, 10) : 0 };
+}
+
+export function generateRatingPlaylistName(rating: string, version: number): string {
+    return generateRatingPlaylistNameInner(settings.ratingPlaylistTemplate, rating, version);
+}
+export function generateRatingPlaylistNameInner(template: string, rating: string, version: number): string {
+    const spillover = version > 0 ? `(${version})` : ``;
+    return template.replace("{rating}", rating).replace("{version}", spillover);
 }
 
 /**

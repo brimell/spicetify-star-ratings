@@ -1,5 +1,11 @@
 import { playlistUris } from "./app";
-import { getAllPlaylistItems } from "./ratings";
+import {
+    generateRatingPlaylistName,
+    generateRatingPlaylistNameInner,
+    getAllPlaylistItems,
+    parseRatingPlaylistName,
+    parseRatingPlaylistNameInner,
+} from "./ratings";
 import { saveSettings, Scaling } from "./settings";
 import "./settings-ui.css";
 
@@ -138,6 +144,53 @@ function ScalingItem({ settings, name, field, onclick }) {
     );
 }
 
+function TemplateItem({ settings, name, onclick }) {
+    const [template, setTemplate] = Spicetify.React.useState(settings.ratingPlaylistTemplate);
+    const [valid, setValid] = Spicetify.React.useState(true);
+
+    function commit(next) {
+        Object.assign(settings, next);
+        saveSettings(settings);
+        if (onclick) onclick();
+    }
+
+    function handleTemplateChange(event) {
+        const value = event.target.value;
+        setTemplate(value);
+        try {
+            const generatedName = generateRatingPlaylistNameInner(value, "4.5", 3);
+            const parsedArgs = parseRatingPlaylistNameInner(value, generatedName);
+            if (!parsedArgs || parsedArgs.rating !== "4.5" || parsedArgs.version !== 3)
+                throw new Error("Invalid template: failed to parse generated playlist name");
+
+            setValid(true);
+            commit({ ratingPlaylistTemplate: value });
+        } catch (e) {
+            setValid(false);
+            console.error(e);
+        }
+    }
+
+    return (
+        <div className="popup-row">
+            <label className="col description">{name}</label>
+            <div className="col action" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                <input
+                    type="text"
+                    value={template}
+                    onChange={handleTemplateChange}
+                    style={{
+                        width: "100%",
+                        fontFamily: "monospace",
+                        borderColor: valid ? undefined : "red",
+                    }}
+                    placeholder="{rating}{version}"
+                />
+            </div>
+        </div>
+    );
+}
+
 async function download_ratings() {
     const ratings = await getAllPlaylistItems(playlistUris);
     const blob = new Blob([JSON.stringify(ratings)], { type: "application/json" });
@@ -261,17 +314,6 @@ export function Settings({
                 settings={settings}
                 name={
                     <>
-                        Re-enqueue workaround
-                        <br />
-                        Workaround for a remote-play issue. Re-enqueues song after 1s, if necessary.
-                    </>
-                }
-                field="reEnqueueWorkaround"
-            />
-            <CheckboxItem
-                settings={settings}
-                name={
-                    <>
                         Average Ratings
                         <br />
                         Record all ratings (instead of only latest). Uses a time-weighted average for the canonical rating.
@@ -310,6 +352,27 @@ export function Settings({
                     </>
                 }
                 field="ratingToWeight"
+            />
+            <TemplateItem
+                settings={settings}
+                name={
+                    <>
+                        Rating playlist name template
+                        <br />
+                        Customize rating playlist names. Use the {"{rating}"} and {"{version}"} placeholders.
+                    </>
+                }
+            />
+            <CheckboxItem
+                settings={settings}
+                name={
+                    <>
+                        Re-enqueue workaround
+                        <br />
+                        Workaround for a remote-play issue. Re-enqueues song after 1s, if necessary.
+                    </>
+                }
+                field="reEnqueueWorkaround"
             />
             <div className="popup-row">
                 <label className="col description">Export ratings</label>

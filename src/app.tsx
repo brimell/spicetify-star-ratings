@@ -13,6 +13,7 @@ import {
     getPlaylistNames,
     getAlbumRating,
     sortPlaylistByRating,
+    generateRatingPlaylistName,
 } from "./ratings";
 import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
 import { tracklistColumnCss } from "./css/css";
@@ -377,7 +378,7 @@ async function handleAddRating(trackUri: string, newRating: string) {
         const contents = await api.getContents(); // get fresh contents
 
         let ratedFolder = ratedFolderUri
-            ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
+            ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
             : findFolderByName(contents, "Rated");
 
         if (!ratedFolder) {
@@ -397,7 +398,7 @@ async function handleAddRating(trackUri: string, newRating: string) {
         let targetPlaylistUri = urisForRating.length > 0 ? urisForRating[urisForRating.length - 1] : null;
 
         if (!targetPlaylistUri) {
-            targetPlaylistUri = await api.createPlaylist(newRating, ratedFolderUri);
+            targetPlaylistUri = await api.createPlaylist(generateRatingPlaylistName(newRating, urisForRating.length), ratedFolderUri);
             await api.makePlaylistPrivate(targetPlaylistUri);
             playlistUris[newRating] = [targetPlaylistUri];
             playlistNames[targetPlaylistUri] = newRating;
@@ -405,7 +406,7 @@ async function handleAddRating(trackUri: string, newRating: string) {
             const items = await api.getPlaylistItems(targetPlaylistUri);
             if (items.length >= PLAYLIST_SIZE_LIMIT) {
                 // next spillover
-                const newPlaylistName = `${newRating}(${urisForRating.length})`;
+                const newPlaylistName = generateRatingPlaylistName(newRating, urisForRating.length);
                 targetPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
                 await api.makePlaylistPrivate(targetPlaylistUri);
                 playlistUris[newRating] = [...urisForRating, targetPlaylistUri];
@@ -872,7 +873,7 @@ async function loadRatings() {
     // Prefer a previously set folder URI (e.g. via "Use as Rated folder" context menu),
     // falling back to discovering the folder by its default name.
     const ratedFolder = ratedFolderUri
-        ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
+        ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
         : findFolderByName(contents, "Rated");
 
     if (ratedFolder) {
