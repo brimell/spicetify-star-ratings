@@ -29,6 +29,10 @@ export function RatingPlaylistModal({ playlistName, currentPlaylistUris, onClick
     const nextFreeSlot = (currentPlaylistUris[rating] ?? []).length;
     const [version, setVersion] = React.useState<number>(nextFreeSlot);
 
+    React.useEffect(() => {
+        setVersion((currentPlaylistUris[rating] ?? []).length);
+    }, [rating, currentPlaylistUris]);
+
     const isOccupied = (currentPlaylistUris[rating] ?? [])[version] != null;
 
     function handleSave() {
@@ -47,15 +51,14 @@ export function RatingPlaylistModal({ playlistName, currentPlaylistUris, onClick
 
             <div className="rating-playlist-modal-field">
                 <label htmlFor="rpm-rating">Rating</label>
-                <input id="rpm-rating" type="number" min={0} value={rating} onChange={(e) => setRating((e.target as HTMLSelectElement).value)} />
+                <input id="rpm-rating" type="number" min={0} value={rating} onChange={(e) => setRating(Number(e.target.value))} />
             </div>
 
             <div className="rating-playlist-modal-field">
                 <label htmlFor="rpm-version">Spillover version</label>
-                <input id="rpm-version" type="number" min={0} value={version} onChange={(e) => setVersion((e.target as HTMLInputElement).value)} />
+                <input id="rpm-version" type="number" min={0} value={version} onChange={(e) => setVersion(Number(e.target.value))} />
                 <p className="rating-playlist-modal-hint">
                     <b>0</b> = base playlist, <b>1,2,etc</b> = first/second/etc spillover playlist.{" "}
-                    {`Next free slot for ${toRatingString(rating)}: ${nextFreeSlot}.`}
                 </p>
                 {isOccupied && (
                     <p className="rating-playlist-modal-error">Version {version} is already occupied. Please choose a different version.</p>
