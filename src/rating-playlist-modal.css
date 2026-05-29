@@ -46,6 +46,19 @@
     line-height: 1.4;
 }
 
+.rating-playlist-modal-error {
+    margin: 6px 0 0;
+    font-size: 0.85em;
+    color: var(--spice-notification-error, #e74c3c);
+    line-height: 1.4;
+}
+
+.rating-playlist-modal-save:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    transform: none;
+}
+
 .rating-playlist-modal-buttons {
     margin-top: 8px;
     display: flex;

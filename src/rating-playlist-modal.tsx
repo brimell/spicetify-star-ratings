@@ -34,10 +34,18 @@ export function RatingPlaylistModal({ playlistName, currentPlaylistUris, onClick
     const [rating, setRating] = React.useState<number>(defaultRating);
     const [versionStr, setVersionStr] = React.useState(String(defaultVersion));
 
+    const version = parseInt(versionStr, 10);
+    const versionValid = !isNaN(version) && version >= 0;
+    // A slot is occupied when it already holds a playlist URI.
+    const isOccupied = versionValid && (currentPlaylistUris[rating] ?? [])[version] != null;
+
     function handleSave() {
-        const version = parseInt(versionStr, 10);
-        if (isNaN(version) || version < 0) {
+        if (!versionValid) {
             Spicetify.showNotification("Please enter a valid version number (0 or higher).");
+            return;
+        }
+        if (isOccupied) {
+            Spicetify.showNotification(`Position ${version} for rating ${toRatingString(rating)} is already occupied.`);
             return;
         }
         onClickSave(rating, version);
@@ -62,7 +70,7 @@ export function RatingPlaylistModal({ playlistName, currentPlaylistUris, onClick
                 <input
                     id="rpm-version"
                     type="number"
-                    min={0}
+                    min={nextFreeSlot}
                     value={versionStr}
                     onChange={(e) => setVersionStr((e.target as HTMLInputElement).value)}
                 />
@@ -70,13 +78,16 @@ export function RatingPlaylistModal({ playlistName, currentPlaylistUris, onClick
                     <b>0</b> = base playlist, <b>1,2,etc</b> = first/second/etc spillover playlist.{" "}
                     {`Next free slot for ${toRatingString(rating)}: ${nextFreeSlot}.`}
                 </p>
+                {isOccupied && (
+                    <p className="rating-playlist-modal-error">Error: position {version} is already occupied — choose a different slot.</p>
+                )}
             </div>
 
             <div className="rating-playlist-modal-buttons">
                 <button className="rating-playlist-modal-cancel" onClick={onClickCancel}>
                     Cancel
                 </button>
-                <button className="rating-playlist-modal-save" onClick={handleSave}>
+                <button className="rating-playlist-modal-save" onClick={handleSave} disabled={isOccupied}>
                     Save
                 </button>
             </div>
