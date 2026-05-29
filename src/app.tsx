@@ -1,9 +1,10 @@
 import * as api from "./api";
 import { createStars, setRating, getMouseoverRating, findStars, toRatingString } from "./stars";
-import { Settings, getSettings, saveSettings, getRatedFolderUri, saveRatedFolderUri } from "./settings";
+import { Settings, getSettings, saveSettings, getPlaylistUris, savePlaylistUris, getRatedFolderUri, saveRatedFolderUri } from "./settings";
 import { Settings as SettingsUi } from "./settings-ui";
 import { SortModal } from "./sort-modal";
 import { WeightedPlaylistModal } from "./weighted-playlist-modal";
+import { RatingPlaylistModal } from "./rating-playlist-modal";
 import {
     findFolderByName,
     findFolderByUri,
@@ -377,7 +378,7 @@ async function handleAddRating(trackUri: string, newRating: string) {
         const contents = await api.getContents(); // get fresh contents
 
         let ratedFolder = ratedFolderUri
-            ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
+            ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
             : findFolderByName(contents, "Rated");
 
         if (!ratedFolder) {
@@ -392,7 +393,6 @@ async function handleAddRating(trackUri: string, newRating: string) {
             saveRatedFolderUri(ratedFolderUri);
         }
 
-        playlistUris = buildPlaylistUris(ratedFolder); // get current playlist uris
         const urisForRating = playlistUris[newRating] ?? [];
         let targetPlaylistUri = urisForRating.length > 0 ? urisForRating[urisForRating.length - 1] : null;
 
@@ -400,6 +400,7 @@ async function handleAddRating(trackUri: string, newRating: string) {
             targetPlaylistUri = await api.createPlaylist(newRating, ratedFolderUri);
             await api.makePlaylistPrivate(targetPlaylistUri);
             playlistUris[newRating] = [targetPlaylistUri];
+            savePlaylistUris();
             playlistNames[targetPlaylistUri] = newRating;
         } else {
             const items = await api.getPlaylistItems(targetPlaylistUri);
@@ -409,6 +410,7 @@ async function handleAddRating(trackUri: string, newRating: string) {
                 targetPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
                 await api.makePlaylistPrivate(targetPlaylistUri);
                 playlistUris[newRating] = [...urisForRating, targetPlaylistUri];
+                savePlaylistUris();
                 playlistNames[targetPlaylistUri] = newPlaylistName;
             }
         }
@@ -866,25 +868,34 @@ function shouldAddContextMenuOnPlaylists(uri) {
 async function loadRatings() {
     ratings = {};
     playlistNames = {};
-    playlistUris = {};
 
+    playlistUris = getPlaylistUris();
+
+    // Scan the rated folder to:
+    //   1. Resolve playlistNames (display names for notifications).
+    //   2. Migrate users coming from the dynamic-scanning era (empty localStorage).
     const contents = await api.getContents();
-    // Prefer a previously set folder URI (e.g. via "Use as Rated folder" context menu),
-    // falling back to discovering the folder by its default name.
     const ratedFolder = ratedFolderUri
-        ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
+        ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
         : findFolderByName(contents, "Rated");
 
     if (ratedFolder) {
         ratedFolderUri = ratedFolder.uri as string;
-        // Dynamically build the playlist URI map by scanning the folder contents.
-        playlistUris = buildPlaylistUris(ratedFolder);
-        const allPlaylistItems = await getAllPlaylistItems(playlistUris);
-        ratings = getRatingsByTrack(allPlaylistItems);
+
+        if (Object.keys(playlistUris).length === 0) {
+            playlistUris = buildPlaylistUris(ratedFolder);
+            if (Object.keys(playlistUris).length > 0) {
+                savePlaylistUris();
+            }
+        }
+
         playlistNames = getPlaylistNames(playlistUris, ratedFolder);
     } else {
         ratedFolderUri = null;
     }
+
+    const allPlaylistItems = await getAllPlaylistItems(playlistUris);
+    ratings = getRatingsByTrack(allPlaylistItems);
 }
 
 async function main() {
@@ -971,6 +982,62 @@ async function main() {
             });
         },
         shouldAddContextMenuOnFolders,
+    ).register();
+
+    new Spicetify.ContextMenu.Item(
+        "Use as rating playlist",
+        (uri) => {
+            const playlistUri = uri[0];
+
+            // Fetch folder contents fresh so we're always in-sync
+            api.getContents().then((contents) => {
+                const ratedFolder = ratedFolderUri
+                    ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
+                    : findFolderByName(contents, "Rated");
+
+                const folderItem = ratedFolder?.items.find((item) => item.uri === playlistUri && item.type === "playlist");
+                if (!folderItem) {
+                    api.showNotification("This playlist is not inside the Rated folder.");
+                    return;
+                }
+
+                const playlistName = folderItem.name;
+
+                Spicetify.PopupModal.display({
+                    title: "Use as rating playlist",
+                    content: Spicetify.React.createElement(RatingPlaylistModal, {
+                        playlistName,
+                        currentPlaylistUris: playlistUris,
+                        onClickCancel: () => {
+                            Spicetify.PopupModal.hide();
+                        },
+                        onClickSave: (rating: string, version: number) => {
+                            Spicetify.PopupModal.hide();
+
+                            // Insert/replace the URI at the chosen version slot.
+                            const existing = [...(playlistUris[rating] ?? [])];
+                            // Expand the array if the version slot doesn't exist yet.
+                            while (existing.length <= version) existing.push(null as unknown as string);
+                            existing[version] = playlistUri;
+                            // Remove any null gaps (keep only registered URIs).
+                            playlistUris[rating] = existing.filter(Boolean);
+                            savePlaylistUris();
+
+                            // Also update the display name so notifications are correct.
+                            playlistNames[playlistUri] = playlistName;
+
+                            api.showNotification(`Registered "${playlistName}" as rating ${rating} (position ${version}).`);
+
+                            ratingsLoading = true;
+                            loadRatings().finally(() => {
+                                ratingsLoading = false;
+                            });
+                        },
+                    }),
+                });
+            });
+        },
+        shouldAddContextMenuOnPlaylists,
     ).register();
 
     new Spicetify.ContextMenu.Item(

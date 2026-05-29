@@ -1,4 +1,6 @@
 import * as api from "./api";
+import { playlistUris } from "./app";
+import { PlaylistUris } from "./types/store";
 
 type HalfIncrementRating = "0.0" | "0.5" | "1.0" | "1.5" | "2.0" | "2.5" | "3.0" | "3.5" | "4.0" | "4.5" | "5.0";
 type QuarterIncrementRating =
@@ -92,6 +94,32 @@ export function getSettings(): Settings {
 
 export function saveSettings(settings: Settings) {
     api.setLocalStorageData("starRatings:settings", JSON.stringify(settings));
+}
+
+export function getPlaylistUris(): PlaylistUris {
+    try {
+        const parsed = JSON.parse(api.getLocalStorageData("starRatings:playlistUris"));
+        if (parsed && typeof parsed === "object") {
+            // Migrate from old single-string format
+            const migrated: PlaylistUris = {};
+            for (const [rating, value] of Object.entries(parsed)) {
+                if (Array.isArray(value)) {
+                    migrated[rating] = value as string[];
+                } else if (typeof value === "string") {
+                    migrated[rating] = [value as string];
+                }
+            }
+            return migrated;
+        }
+        throw "";
+    } catch {
+        api.setLocalStorageData("starRatings:playlistUris", `{}`);
+        return {};
+    }
+}
+
+export function savePlaylistUris() {
+    api.setLocalStorageData("starRatings:playlistUris", JSON.stringify(playlistUris));
 }
 
 export function getRatedFolderUri() {
