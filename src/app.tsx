@@ -69,9 +69,7 @@ export function getTrackRating(trackUri: string): number | null {
         let weightedSum = 0;
         let weightSum = 0;
 
-        for (const { rating: valueStr, time } of rating) {
-            const value = parseFloat(valueStr);
-
+        for (const { rating: value, time } of rating) {
             const deltaMs = new Date().getTime() - time.getTime();
 
             const weight = Math.pow(0.5, deltaMs / HALF_LIFE_MS);
@@ -351,11 +349,11 @@ function updateAlbumRating() {
     setRating(albumStarData[1], averageRating, albumStarData[2]);
 }
 
-async function handleRemoveRating(trackUri: string, rating: string, uid?: string) {
+async function handleRemoveRating(trackUri: string, rating: number, uid?: string) {
     const entry =
         uid != null ? ratings[trackUri]?.find((r) => r.rating === rating && r.uid === uid) : ratings[trackUri]?.find((r) => r.rating === rating);
     const targetPlaylistUri = entry?.playlistUri ?? (playlistUris[rating] ?? [])[0];
-    const playlistName = playlistNames[targetPlaylistUri] ?? rating;
+    const playlistName = playlistNames[targetPlaylistUri] ?? toRatingString(rating);
     await api.removeTrackFromPlaylist(targetPlaylistUri, trackUri, uid);
 
     if (uid != null) {
@@ -373,7 +371,7 @@ async function handleRemoveRating(trackUri: string, rating: string, uid?: string
     api.showNotification(`Removed from ${playlistName}`);
 }
 
-async function handleAddRating(trackUri: string, newRating: string) {
+async function handleAddRating(trackUri: string, newRating: number) {
     try {
         const contents = await api.getContents(); // get fresh contents
 
@@ -393,20 +391,21 @@ async function handleAddRating(trackUri: string, newRating: string) {
             saveRatedFolderUri(ratedFolderUri);
         }
 
+        const ratingName = toRatingString(newRating);
         const urisForRating = playlistUris[newRating] ?? [];
         let targetPlaylistUri = urisForRating.length > 0 ? urisForRating[urisForRating.length - 1] : null;
 
         if (!targetPlaylistUri) {
-            targetPlaylistUri = await api.createPlaylist(newRating, ratedFolderUri);
+            targetPlaylistUri = await api.createPlaylist(ratingName, ratedFolderUri);
             await api.makePlaylistPrivate(targetPlaylistUri);
             playlistUris[newRating] = [targetPlaylistUri];
             savePlaylistUris();
-            playlistNames[targetPlaylistUri] = newRating;
+            playlistNames[targetPlaylistUri] = ratingName;
         } else {
             const items = await api.getPlaylistItems(targetPlaylistUri);
             if (items.length >= PLAYLIST_SIZE_LIMIT) {
                 // next spillover
-                const newPlaylistName = `${newRating}(${urisForRating.length})`;
+                const newPlaylistName = `${ratingName}(${urisForRating.length})`;
                 targetPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);
                 await api.makePlaylistPrivate(targetPlaylistUri);
                 playlistUris[newRating] = [...urisForRating, targetPlaylistUri];
@@ -424,7 +423,7 @@ async function handleAddRating(trackUri: string, newRating: string) {
         const latestRatingUid = ratings[trackUri]?.reduce((prev, current) => (current.time > prev.time ? current : prev))?.uid;
         if (latestRatingUid) await api.moveToFront(targetPlaylistUri, latestRatingUid);
 
-        api.showNotification(`Added to ${playlistNames[targetPlaylistUri] ?? newRating}`);
+        api.showNotification(`Added to ${playlistNames[targetPlaylistUri] ?? ratingName}`);
     } catch (error) {
         console.error("Error in handleAddRating:", error);
         api.showNotification("Error updating rating: " + ((error as any).message || "Unknown error"));
@@ -439,7 +438,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
         const star = starElements[i][0];
         const trackUri: string = getTrackUri();
         const oldRating = ratings[trackUri];
-        let newRating: string = ratingOverride !== null ? ratingOverride : toRatingString(getMouseoverRating(settings, star, i));
+        const newRating: number = ratingOverride !== null ? ratingOverride : getMouseoverRating(settings, star, i);
 
         let removePromise = null;
         let addPromise = null;
@@ -475,7 +474,7 @@ function getClickListener(i, ratingOverride, starData, getTrackUri) {
             addPromise = handleAddRating(trackUri, newRating);
 
             // Like the track if it's rated above the like threshold
-            if (settings.likeThreshold !== "disabled" && parseFloat(newRating) >= parseFloat(settings.likeThreshold)) {
+            if (settings.likeThreshold !== "disabled" && newRating >= parseFloat(settings.likeThreshold)) {
                 api.addTrackToLikedSongs(trackUri);
             }
 
@@ -1011,7 +1010,7 @@ async function main() {
                         onClickCancel: () => {
                             Spicetify.PopupModal.hide();
                         },
-                        onClickSave: (rating: string, version: number) => {
+                        onClickSave: (rating: number, version: number) => {
                             Spicetify.PopupModal.hide();
 
                             // Insert/replace the URI at the chosen version slot.
@@ -1026,7 +1025,7 @@ async function main() {
                             // Also update the display name so notifications are correct.
                             playlistNames[playlistUri] = playlistName;
 
-                            api.showNotification(`Registered "${playlistName}" as rating ${rating} (position ${version}).`);
+                            api.showNotification(`Registered "${playlistName}" as rating ${toRatingString(rating)} (position ${version}).`);
 
                             ratingsLoading = true;
                             loadRatings().finally(() => {

@@ -100,9 +100,10 @@ export function getPlaylistUris(): PlaylistUris {
     try {
         const parsed = JSON.parse(api.getLocalStorageData("starRatings:playlistUris"));
         if (parsed && typeof parsed === "object") {
-            // Migrate from old single-string format
             const migrated: PlaylistUris = {};
-            for (const [rating, value] of Object.entries(parsed)) {
+            for (const [ratingStr, value] of Object.entries(parsed)) {
+                const rating = parseFloat(ratingStr);
+                if (isNaN(rating)) continue;
                 if (Array.isArray(value)) {
                     migrated[rating] = value as string[];
                 } else if (typeof value === "string") {

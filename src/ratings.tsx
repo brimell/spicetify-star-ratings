@@ -32,13 +32,13 @@ export function findFolderByName(contents: Contents, name: string): Contents | u
  *
  * Returns null if the name does not match.
  */
-export function parseRatingPlaylistName(name: string): { rating: string; version: number } | null {
+export function parseRatingPlaylistName(name: string): { rating: number; version: number } | null {
     // Base name with no suffix: "4.5"
     const baseMatch = name.match(/^(\d+(?:\.\d+)?)$/);
-    if (baseMatch) return { rating: baseMatch[1], version: 1 };
+    if (baseMatch) return { rating: parseFloat(baseMatch[1]), version: 1 };
     // Spillover suffix: "4.5(1)", "4.5(2)", …
     const overflowMatch = name.match(/^(\d+(?:\.\d+)?)\((\d+)\)$/);
-    if (overflowMatch) return { rating: overflowMatch[1], version: parseInt(overflowMatch[2]) + 1 };
+    if (overflowMatch) return { rating: parseFloat(overflowMatch[1]), version: parseInt(overflowMatch[2]) + 1 };
     return null;
 }
 
@@ -48,18 +48,18 @@ export function parseRatingPlaylistName(name: string): { rating: string; version
  * so the last element in each array is always the newest / highest-version playlist.
  */
 export function buildPlaylistUris(ratedFolder: Contents): PlaylistUris {
-    const grouped: { [rating: string]: { uri: string; version: number }[] } = {};
+    const grouped = new Map<number, { uri: string; version: number }[]>();
 
     for (const item of ratedFolder.items) {
         if (item.type !== "playlist") continue;
         const parsed = parseRatingPlaylistName(item.name);
         if (!parsed) continue;
-        if (!grouped[parsed.rating]) grouped[parsed.rating] = [];
-        grouped[parsed.rating].push({ uri: item.uri, version: parsed.version });
+        if (!grouped.has(parsed.rating)) grouped.set(parsed.rating, []);
+        grouped.get(parsed.rating)!.push({ uri: item.uri, version: parsed.version });
     }
 
     const result: PlaylistUris = {};
-    for (const [rating, items] of Object.entries(grouped)) {
+    for (const [rating, items] of grouped) {
         result[rating] = items.sort((a, b) => a.version - b.version).map((i) => i.uri);
     }
     return result;
@@ -76,11 +76,13 @@ export function getPlaylistNames(playlistUris: PlaylistUris, ratedFolder: Conten
     return playlistNames;
 }
 
-type PlaylistItemsEntry = { rating: string; playlistUri: string; tracks: Track[] };
+type PlaylistItemsEntry = { rating: number; playlistUri: string; tracks: Track[] };
 
 export async function getAllPlaylistItems(playlistUris: PlaylistUris): Promise<PlaylistItemsEntry[]> {
-    const entries: { rating: string; playlistUri: string }[] = [];
-    for (const [rating, uris] of Object.entries(playlistUris)) {
+    const entries: { rating: number; playlistUri: string }[] = [];
+    // Object.entries always yields string keys; parse back to number.
+    for (const [ratingStr, uris] of Object.entries(playlistUris)) {
+        const rating = parseFloat(ratingStr);
         for (const playlistUri of uris) {
             entries.push({ rating, playlistUri });
         }

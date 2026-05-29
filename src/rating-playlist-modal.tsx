@@ -1,5 +1,6 @@
 import { PlaylistUris } from "./types/store";
 import { parseRatingPlaylistName } from "./ratings";
+import { toRatingString } from "./stars";
 import "./rating-playlist-modal.css";
 
 const React = Spicetify.React;
@@ -12,20 +13,25 @@ interface RatingPlaylistModalProps {
     onClickCancel: () => void;
     /**
      * Called when the user clicks Save.
-     * @param rating  The rating string this playlist should count for (e.g. "4.5").
+     * @param rating  The numeric rating this playlist should count for (e.g. 4.5).
      * @param version 0-based slot index within that rating's playlist array.
      *                0 = base playlist, 1 = first spillover, etc.
      */
-    onClickSave: (rating: string, version: number) => void;
+    onClickSave: (rating: number, version: number) => void;
 }
+
+// All half-step ratings the plugin supports.
+const HALF_RATINGS: number[] = [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0];
 
 export function RatingPlaylistModal({ playlistName, currentPlaylistUris, onClickCancel, onClickSave }: RatingPlaylistModalProps) {
     // Try to pre-fill from the playlist's current name.
     const parsed = parseRatingPlaylistName(playlistName);
-    const defaultRating = parsed?.rating ?? "2.5";
+    // parseRatingPlaylistName version is 1-based; UI uses 0-based.
+    const defaultRating: number = parsed?.rating ?? 5.0;
     const defaultVersion = parsed ? parsed.version - 1 : 0;
 
-    const [rating, setRating] = React.useState(defaultRating);
+    // Keep rating as a number; version as string because it comes from a text input.
+    const [rating, setRating] = React.useState<number>(defaultRating);
     const [versionStr, setVersionStr] = React.useState(String(defaultVersion));
 
     function handleSave() {
@@ -61,8 +67,8 @@ export function RatingPlaylistModal({ playlistName, currentPlaylistUris, onClick
                     onChange={(e) => setVersionStr((e.target as HTMLInputElement).value)}
                 />
                 <p className="rating-playlist-modal-hint">
-                    <b>0</b> = base playlist, <b>1,2,etc.</b> = first/second/etc. spillover playlsit
-                    {` Next free slot for "${rating}": ${nextFreeSlot}.`}
+                    <b>0</b> = base playlist, <b>1,2,etc</b> = first/second/etc spillover playlist.{" "}
+                    {`Next free slot for ${toRatingString(rating)}: ${nextFreeSlot}.`}
                 </p>
             </div>
 
