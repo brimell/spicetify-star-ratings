@@ -376,7 +376,7 @@ async function handleAddRating(trackUri: string, newRating: number) {
         const contents = await api.getContents(); // get fresh contents
 
         let ratedFolder = ratedFolderUri
-            ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
+            ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
             : findFolderByName(contents, "Rated");
 
         if (!ratedFolder) {
@@ -875,7 +875,7 @@ async function loadRatings() {
     //   2. Migrate users coming from the dynamic-scanning era (empty localStorage).
     const contents = await api.getContents();
     const ratedFolder = ratedFolderUri
-        ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
+        ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
         : findFolderByName(contents, "Rated");
 
     if (ratedFolder) {
@@ -984,6 +984,61 @@ async function main() {
     ).register();
 
     new Spicetify.ContextMenu.Item(
+        "Create weighted Playlist",
+        (uri) => {
+            const playlistUri = uri[0];
+            Spicetify.PopupModal.display({
+                title: "Create Weighted Playlist",
+                content: Spicetify.React.createElement(WeightedPlaylistModal, {
+                    onClickCancel: () => {
+                        Spicetify.PopupModal.hide();
+                    },
+                    onClickCreate: async (trackCount) => {
+                        Spicetify.PopupModal.hide();
+                        api.showNotification("Creating weighted playlist...");
+
+                        try {
+                            const weightedPlaylist = await createWeightedShufflePlaylist(playlistUri, trackCount);
+                            if (weightedPlaylist) {
+                                api.showNotification(`Weighted Playlist created with ${trackCount} tracks!`);
+                            } else {
+                                api.showNotification("Failed to create weighted Playlist");
+                            }
+                        } catch (error) {
+                            console.error("Error creating weighted Playlist:", error);
+                            api.showNotification("Error creating weighted Playlist");
+                        }
+                    },
+                }),
+            });
+        },
+        shouldAddContextMenuOnPlaylists,
+    ).register();
+
+    new Spicetify.ContextMenu.Item(
+        "Sort by rating",
+        (uri) => {
+            Spicetify.PopupModal.display({
+                title: "Modify Custom order?",
+                content: SortModal({
+                    onClickCancel: () => {
+                        Spicetify.PopupModal.hide();
+                    },
+                    onClickOK: () => {
+                        Spicetify.PopupModal.hide();
+                        isSorting = true;
+                        api.showNotification("Sorting...");
+                        sortPlaylistByRating(uri[0], ratings).finally(() => {
+                            isSorting = false;
+                        });
+                    },
+                }),
+            });
+        },
+        shouldAddContextMenuOnPlaylists,
+    ).register();
+
+    new Spicetify.ContextMenu.Item(
         "Use as rating playlist",
         (uri) => {
             const playlistUri = uri[0];
@@ -991,7 +1046,7 @@ async function main() {
             // Fetch folder contents fresh so we're always in-sync
             api.getContents().then((contents) => {
                 const ratedFolder = ratedFolderUri
-                    ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
+                    ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
                     : findFolderByName(contents, "Rated");
 
                 const folderItem = ratedFolder?.items.find((item) => item.uri === playlistUri && item.type === "playlist");
@@ -1034,61 +1089,6 @@ async function main() {
                         },
                     }),
                 });
-            });
-        },
-        shouldAddContextMenuOnPlaylists,
-    ).register();
-
-    new Spicetify.ContextMenu.Item(
-        "Sort by rating",
-        (uri) => {
-            Spicetify.PopupModal.display({
-                title: "Modify Custom order?",
-                content: SortModal({
-                    onClickCancel: () => {
-                        Spicetify.PopupModal.hide();
-                    },
-                    onClickOK: () => {
-                        Spicetify.PopupModal.hide();
-                        isSorting = true;
-                        api.showNotification("Sorting...");
-                        sortPlaylistByRating(uri[0], ratings).finally(() => {
-                            isSorting = false;
-                        });
-                    },
-                }),
-            });
-        },
-        shouldAddContextMenuOnPlaylists,
-    ).register();
-
-    new Spicetify.ContextMenu.Item(
-        "Create weighted Playlist",
-        (uri) => {
-            const playlistUri = uri[0];
-            Spicetify.PopupModal.display({
-                title: "Create Weighted Playlist",
-                content: Spicetify.React.createElement(WeightedPlaylistModal, {
-                    onClickCancel: () => {
-                        Spicetify.PopupModal.hide();
-                    },
-                    onClickCreate: async (trackCount) => {
-                        Spicetify.PopupModal.hide();
-                        api.showNotification("Creating weighted playlist...");
-
-                        try {
-                            const weightedPlaylist = await createWeightedShufflePlaylist(playlistUri, trackCount);
-                            if (weightedPlaylist) {
-                                api.showNotification(`Weighted Playlist created with ${trackCount} tracks!`);
-                            } else {
-                                api.showNotification("Failed to create weighted Playlist");
-                            }
-                        } catch (error) {
-                            console.error("Error creating weighted Playlist:", error);
-                            api.showNotification("Error creating weighted Playlist");
-                        }
-                    },
-                }),
             });
         },
         shouldAddContextMenuOnPlaylists,
