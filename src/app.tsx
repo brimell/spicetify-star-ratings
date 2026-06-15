@@ -8,12 +8,12 @@ import { RatingPlaylistModal } from "./rating-playlist-modal";
 import {
     findFolderByName,
     findFolderByUri,
-    buildPlaylistUris,
     getAllPlaylistItems,
     getRatingsByTrack,
     getPlaylistNames,
     getAlbumRating,
     sortPlaylistByRating,
+    parseRatingPlaylistName,
 } from "./ratings";
 import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
 import { tracklistColumnCss } from "./css/css";
@@ -881,11 +881,29 @@ async function loadRatings() {
     if (ratedFolder) {
         ratedFolderUri = ratedFolder.uri as string;
 
-        if (Object.keys(playlistUris).length === 0) {
-            playlistUris = buildPlaylistUris(ratedFolder);
-            if (Object.keys(playlistUris).length > 0) {
-                savePlaylistUris();
+        // Auto-register any playlists in the rated folder that have a valid
+        // rating name but are not yet registered in playlistUris.
+        let changed = false;
+        const allRegistered = new Set(Object.values(playlistUris).flat());
+        for (const item of ratedFolder.items) {
+            if (item.type !== "playlist") continue;
+            if (allRegistered.has(item.uri)) continue;
+            const parsed = parseRatingPlaylistName(item.name);
+            if (!parsed) continue;
+            const { rating, version } = parsed;
+            if (!playlistUris[rating]) {
+                playlistUris[rating] = [];
             }
+            while (playlistUris[rating].length <= version) {
+                playlistUris[rating].push(null as unknown as string);
+            }
+            playlistUris[rating][version] = item.uri;
+            playlistUris[rating] = playlistUris[rating].filter(Boolean);
+            allRegistered.add(item.uri);
+            changed = true;
+        }
+        if (changed) {
+            savePlaylistUris();
         }
 
         playlistNames = getPlaylistNames(playlistUris, ratedFolder);
