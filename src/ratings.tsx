@@ -187,18 +187,10 @@ export async function sortPlaylistByRating(playlistUri: string, ratings: Ratings
         .sort((a, b) => b.rating - a.rating || a.idx - b.idx)
         .map((item) => item.uid);
 
-    // create anchor: move top-rated to the start
-    const currentFirst = items[0].rowId;
-    if (sorted[0] !== currentFirst) {
-        await api.moveTracksBefore(playlistUri, [sorted[0]], currentFirst);
-    }
+    // Use lowest-rated track as anchor, then insert tracks in descending-rating order before it.
+    const anchor = sorted[sorted.length - 1];
 
-    const BATCH_SIZE = 50;
-    let anchor = sorted[0];
-
-    for (let i = 1; i < sorted.length; i += BATCH_SIZE) {
-        const chunk = sorted.slice(i, i + BATCH_SIZE);
-        await api.moveTracksAfter(playlistUri, chunk, anchor);
-        anchor = chunk[chunk.length - 1];
+    for (let i = 0; i < sorted.length - 1; i++) {
+        await api.moveTracksBefore(playlistUri, [sorted[i]], anchor);
     }
 }
