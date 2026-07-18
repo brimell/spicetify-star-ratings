@@ -187,6 +187,21 @@ export function Settings({
                 onclick={handleEnableKeyboardShortcutsCheckboxClick}
             />
             <CheckboxItem settings={settings} name="Show playlist stars" field="showPlaylistStars" onclick={handleShowPlaylistStarsCheckboxClick} />
+            <CheckboxItem
+                settings={settings}
+                name={
+                    <>
+                        Show weighted shuffle toggle
+                        <br />
+                        Display the weighted shuffle button 'W' next to the shuffle button
+                    </>
+                }
+                field="showWeightedShuffle"
+                onclick={() => {
+                    const btn = document.querySelector(".weighted-shuffle-button");
+                    if (btn) btn.remove();
+                }}
+            />
             <DropdownItem
                 settings={settings}
                 name="Auto-like/dislike threshold"

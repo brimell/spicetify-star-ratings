@@ -47,6 +47,7 @@ export interface Settings {
     showExactRating: boolean;
     ratingToWeight: Scaling;
     play: Play;
+    showWeightedShuffle: boolean;
 }
 
 const defaultSettings: Settings = {
@@ -64,6 +65,7 @@ const defaultSettings: Settings = {
     showExactRating: false,
     ratingToWeight: { kind: "Linear" },
     play: "all",
+    showWeightedShuffle: true,
 };
 
 export function getSettings(): Settings {

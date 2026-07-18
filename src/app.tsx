@@ -776,7 +776,7 @@ async function observerCallback(keys) {
     const shuffleButton =
         document.querySelector('[data-testid="control-button-shuffle"]') || document.querySelector('button[aria-label*="Shuffle" i]');
 
-    if (shuffleButton && !document.querySelector(".weighted-shuffle-button")) {
+    if (shuffleButton && !document.querySelector(".weighted-shuffle-button") && settings.showWeightedShuffle) {
         const weightedShuffleButton = document.createElement("button");
         weightedShuffleButton.className = "weighted-shuffle-button";
         weightedShuffleButton.style.cssText = `
