@@ -75,6 +75,10 @@ https://github.com/jeroentvb/spicetify-playlist-icons provides a nice view of th
 ## It Doesn't Work!
 Please [open an issue](https://github.com/brimell/spicetify-star-ratings/issues/new), we want this extension to work as smoothly as possible!
 
+## Performance
+The cost of adding a new rating scales with the size of the playlist the song is being added to. 
+So if you have a _lot_ of ratings, it may be beneficial to keep your currently active playlists decently small. To do this, you can adjust the `Max Playlist Items` in the settings, which automatically creates new playlists when the limit is reached.
+
 ## Credits
 
 *Forked from [Duffey's Spicetify Star Ratings](https://github.com/duffey/spicetify-star-ratings) (archived)*

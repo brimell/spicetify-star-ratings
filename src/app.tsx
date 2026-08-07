@@ -58,8 +58,6 @@ let clickListenerRunning = false;
 let ratingsLoading = false;
 let isSorting = false;
 
-const PLAYLIST_SIZE_LIMIT = 8000; // Maximum tracks per playlist
-
 export function getTrackRating(trackUri: string): number | null {
     const rating = ratings[trackUri];
 
@@ -404,7 +402,7 @@ async function handleAddRating(trackUri: string, newRating: number) {
             playlistNames[targetPlaylistUri] = ratingName;
         } else {
             const items = await api.getPlaylistItems(targetPlaylistUri);
-            if (items.length >= PLAYLIST_SIZE_LIMIT) {
+            if (items.length >= settings.maxPlaylistItems) {
                 // next spillover
                 const newPlaylistName = `${ratingName}(${urisForRating.length})`;
                 targetPlaylistUri = await api.createPlaylist(newPlaylistName, ratedFolderUri);

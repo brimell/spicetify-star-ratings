@@ -38,6 +38,7 @@ export interface Settings {
     likeThreshold: Threshold;
     enableKeyboardShortcuts: boolean;
     showPlaylistStars: boolean;
+    maxPlaylistItems: number;
     nowPlayingStarsPosition: NowPlayingStarsPosition;
     skipThreshold: Threshold;
     syncDuplicateSongs: boolean;
@@ -56,6 +57,8 @@ const defaultSettings: Settings = {
     likeThreshold: "4.0",
     enableKeyboardShortcuts: true,
     showPlaylistStars: true,
+    /** Spotify's hard limit is 10,000; keep a conservative default. */
+    maxPlaylistItems: 8000, // TODO: adjust this for acceptable performance if userbase is okay with it.
     nowPlayingStarsPosition: "left",
     skipThreshold: "disabled",
     syncDuplicateSongs: false,

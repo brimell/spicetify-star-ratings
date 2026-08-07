@@ -68,6 +68,38 @@ function DropdownItem({ settings, name, field, options, onclick }) {
     );
 }
 
+function NumberItem({ settings, name, field, min, max, step, onclick }: {
+    settings: any;
+    name: React.ReactNode;
+    field: string;
+    min: number;
+    max: number;
+    step: number;
+    onclick?: () => void;
+}) {
+    const [value, setValue] = Spicetify.React.useState(settings[field]);
+
+    function handleOnChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const next = parseInt(event.target.value);
+        if (isNaN(next)) return;
+        const floor = Math.max(min, 1);
+        const clamped = Math.max(floor, Math.min(max, next));
+        settings[field] = clamped;
+        setValue(clamped);
+        saveSettings(settings);
+        if (onclick) onclick();
+    }
+
+    return (
+        <div className="popup-row">
+            <label className="col description">{name}</label>
+            <div className="col action">
+                <input type="number" value={value} min={min} max={max} step={step} onChange={handleOnChange} style={{ width: "100px" }} />
+            </div>
+        </div>
+    );
+}
+
 function KeyboardShortcutDescription({ label, numberKey }) {
     return (
         <li className="main-keyboardShortcutsHelpModal-sectionItem">
@@ -325,6 +357,20 @@ export function Settings({
                     </>
                 }
                 field="ratingToWeight"
+            />
+            <NumberItem
+                settings={settings}
+                name={
+                    <>
+                        Max Playlist Items
+                        <br />
+                        Maximum tracks per rating playlist before a new one is created. Smaller playlists make adding ratings faster.
+                    </>
+                }
+                field="maxPlaylistItems"
+                min={0}
+                max={10000}
+                step={100}
             />
             <div className="popup-row">
                 <label className="col description">Export ratings</label>
