@@ -57,8 +57,8 @@ const defaultSettings: Settings = {
     likeThreshold: "4.0",
     enableKeyboardShortcuts: true,
     showPlaylistStars: true,
-    /** Spotify's hard limit is 10,000; keep a conservative default. */
-    maxPlaylistItems: 8000, // TODO: adjust this for acceptable performance if userbase is okay with it.
+    /* Spotify's hard limit is 10,000 */
+    maxPlaylistItems: 1000,
     nowPlayingStarsPosition: "left",
     skipThreshold: "disabled",
     syncDuplicateSongs: false,
