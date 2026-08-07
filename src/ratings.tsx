@@ -147,6 +147,48 @@ export function getRatingsByTrack(allPlaylistItems: PlaylistItemsEntry[]): Ratin
     return normalizedRatings;
 }
 
+/**
+ * Merge the freshly-fetched contents of a single rating playlist into the
+ * ratings map, without re-scanning the whole corpus.
+ *
+ * Used after adding a track, when we need the new entry's uid (the add call
+ * does not return it). The just-added entry is identified as the matching
+ * track with the most recent add time. The affected track's entries are
+ * re-normalized so the result matches what a full `getRatingsByTrack` pass
+ * would produce.
+ *
+ * Returns the just-added entry, or undefined if the track wasn't found in the
+ * playlist's contents.
+ */
+export function mergeAddedTrack(
+    ratings: Ratings,
+    playlistUri: string,
+    rating: number,
+    trackUri: string,
+    tracks: Track[],
+): TimestampedRating | undefined {
+    const candidates = tracks.filter((track) => track.uri === trackUri);
+    if (candidates.length === 0) return undefined;
+
+    // The just-added entry has the most recent add time.
+    const added = candidates.reduce((prev, current) =>
+        new Date(current.addedAt).getTime() > new Date(prev.addedAt).getTime() ? current : prev,
+    );
+    const entry: TimestampedRating = {
+        rating,
+        time: new Date(added.addedAt),
+        uid: added.uid,
+        playlistUri,
+    };
+
+    const existing = ratings[trackUri] ?? [];
+    if (!existing.some((e) => e.playlistUri === playlistUri && e.uid === entry.uid)) {
+        ratings[trackUri] = normalizeTrackRatings([...existing, entry]);
+    }
+
+    return entry;
+}
+
 export function getAlbumRating(ratings: Ratings, album): number {
     console.log("album is:", album);
     if (!album) return 0.0;

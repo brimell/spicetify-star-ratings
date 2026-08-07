@@ -10,6 +10,7 @@ import {
     findFolderByUri,
     getAllPlaylistItems,
     getRatingsByTrack,
+    mergeAddedTrack,
     getPlaylistNames,
     getAlbumRating,
     sortPlaylistByRating,
@@ -414,14 +415,20 @@ async function handleAddRating(trackUri: string, newRating: number) {
             }
         }
 
+        // Both branches above guarantee a non-null target; assert for the type system
+        if (!targetPlaylistUri) throw new Error("Could not determine target playlist");
+
         await api.addTrackToPlaylist(targetPlaylistUri, trackUri);
 
-        // refresh state to maintain consistency
-        await loadRatings();
+        const targetPlaylistItems = await api.getPlaylistItems(targetPlaylistUri);
+        const addedEntry = mergeAddedTrack(ratings, targetPlaylistUri, newRating, trackUri, targetPlaylistItems);
 
         // Move the new rating entry to the front of its playlist.
-        const latestRatingUid = ratings[trackUri]?.reduce((prev, current) => (current.time > prev.time ? current : prev))?.uid;
-        if (latestRatingUid) await api.moveToFront(targetPlaylistUri, latestRatingUid);
+        if (addedEntry) {
+            await api.moveToFront(targetPlaylistUri, addedEntry.uid);
+        } else {
+            console.warn(`Could not find ${trackUri} in ${targetPlaylistUri} after adding it; ratings may be stale`);
+        }
 
         api.showNotification(`Added to ${playlistNames[targetPlaylistUri] ?? ratingName}`);
     } catch (error) {
