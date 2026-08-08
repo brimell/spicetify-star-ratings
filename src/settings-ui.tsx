@@ -259,6 +259,15 @@ export function Settings({
             />
             <DropdownItem
                 settings={settings}
+                name="Add new ratings to"
+                field="newRatingPosition"
+                options={{
+                    Front: "front",
+                    Back: "back",
+                }}
+            />
+            <DropdownItem
+                settings={settings}
                 name="Skip threshold"
                 field="skipThreshold"
                 options={{

@@ -27,6 +27,7 @@ type QuarterIncrementRating =
     | "5.0";
 
 type NowPlayingStarsPosition = "left" | "right";
+type NewRatingPosition = "front" | "back";
 type Threshold = "disabled" | HalfIncrementRating;
 
 export type Play = "all" | "onlyrated" | "onlyunrated";
@@ -40,6 +41,7 @@ export interface Settings {
     showPlaylistStars: boolean;
     maxPlaylistItems: number;
     nowPlayingStarsPosition: NowPlayingStarsPosition;
+    newRatingPosition: NewRatingPosition;
     skipThreshold: Threshold;
     syncDuplicateSongs: boolean;
     defaultRating: HalfIncrementRating;
@@ -60,6 +62,7 @@ const defaultSettings: Settings = {
     /* Spotify's hard limit is 10,000 */
     maxPlaylistItems: 1000,
     nowPlayingStarsPosition: "left",
+    newRatingPosition: "front",
     skipThreshold: "disabled",
     syncDuplicateSongs: false,
     defaultRating: "2.5",
