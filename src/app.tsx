@@ -421,9 +421,17 @@ async function handleAddRating(trackUri: string, newRating: number) {
         const targetPlaylistItems = await api.getPlaylistItems(targetPlaylistUri);
         const addedEntry = mergeAddedTrack(ratings, targetPlaylistUri, newRating, trackUri, targetPlaylistItems);
 
-        // Move the new rating entry to the front of its playlist.
+        // Move the new rating entry to the front or back
         if (addedEntry) {
-            await api.moveToFront(targetPlaylistUri, addedEntry.uid);
+            if (settings.newRatingPosition === "front") {
+                await api.moveToFront(targetPlaylistUri, addedEntry.uid);
+            } else {
+                const lastItem = targetPlaylistItems[targetPlaylistItems.length - 1];
+                const lastItemUid = lastItem?.uid ?? lastItem?.rowId;
+                if (lastItemUid && addedEntry.uid !== lastItemUid) {
+                    await api.moveTracksAfter(targetPlaylistUri, [addedEntry.uid], lastItemUid);
+                }
+            }
         } else {
             console.warn(`Could not find ${trackUri} in ${targetPlaylistUri} after adding it; ratings may be stale`);
         }
