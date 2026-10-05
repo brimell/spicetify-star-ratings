@@ -79,6 +79,10 @@ Please [open an issue](https://github.com/brimell/spicetify-star-ratings/issues/
 The cost of adding a new rating scales with the size of the playlist the song is being added to. 
 So if you have a _lot_ of ratings, it may be beneficial to keep your currently active playlists decently small. To do this, you can adjust the `Max Playlist Items` in the settings, which automatically creates new playlists when the limit is reached.
 
+### Spillover Playlists
+Playlists for the same rating are assigned a monotonically increasing 'spillover version'. New ratings are always added to the playlist with the highest version number.
+Deleting a playlist will not cause it's spillover version to be re-used.
+
 ## Credits
 
 *Forked from [Duffey's Spicetify Star Ratings](https://github.com/duffey/spicetify-star-ratings) (archived)*
