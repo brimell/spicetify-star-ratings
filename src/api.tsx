@@ -96,8 +96,13 @@ export async function removeTrackFromPlaylist(playlistUri: string, trackUri: str
 }
 
 export async function getPlaylistItems(uri: string) {
-    const result = await getPlaylistAPI().getContents(uri);
-    return result.items;
+    try {
+        const result = await getPlaylistAPI().getContents(uri);
+        return result.items;
+    } catch (error) {
+        console.error(`Failed to get playlist items for ${uri}: ${error}`);
+        return [];
+    }
 }
 
 export async function isAppLaterThan(specifiedVersion: string) {
