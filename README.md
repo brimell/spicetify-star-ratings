@@ -14,6 +14,10 @@ Add star ratings to Spotify
 Settings, such as enabling/disabling half star ratings, can be accessed from the menu at the top right
 ![Settings](imgs/settings.png)
 
+## Ratings Storage
+All ratings are stored in spotify itself, by adding the rated songs to designated rating playlists.
+This means that you will always have access to your ratings as long as you have access to your spotify account.
+
 ## Implement List
 
 - [x] option to play songs with a minimum rating
