@@ -1,10 +1,18 @@
+---
+name: Bug report
+about: Report a problem with star-ratings
+title: "[Bug] "
+labels: bug
+assignees: ""
+---
+
 ## Versions
 
 <!-- Please fill in the respective versions you have installed of these components -->
 
-spotify:
-spicetify:
-star-ratings:
+- spotify:
+- spicetify:
+- star-ratings:
 
 ## Issue
 
