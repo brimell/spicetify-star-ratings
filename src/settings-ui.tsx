@@ -68,7 +68,15 @@ function DropdownItem({ settings, name, field, options, onclick }) {
     );
 }
 
-function NumberItem({ settings, name, field, min, max, step, onclick }: {
+function NumberItem({
+    settings,
+    name,
+    field,
+    min,
+    max,
+    step,
+    onclick,
+}: {
     settings: any;
     name: React.ReactNode;
     field: string;
@@ -235,17 +243,11 @@ export function Settings({
                 }}
             />
             <DropdownItem
+                key={`threshold-${settings.quarterStarRatings}-${settings.halfStarRatings}`}
                 settings={settings}
                 name="Auto-like/dislike threshold"
                 field="likeThreshold"
-                options={{
-                    Disabled: "disabled",
-                    "3.0": "3.0",
-                    "3.5": "3.5",
-                    "4.0": "4.0",
-                    "4.5": "4.5",
-                    "5.0": "5.0",
-                }}
+                options={buildLikeThresholdOptions(settings)}
             />
             <DropdownItem
                 settings={settings}
@@ -407,4 +409,30 @@ export function Settings({
             </ul>
         </div>
     );
+}
+
+function computeLikeThresholdStep(settings) {
+    if (settings.quarterStarRatings) return 0.25;
+    if (settings.halfStarRatings) return 0.5;
+    return 1.0;
+}
+
+function buildLikeThresholdOptions(settings) {
+    const step = computeLikeThresholdStep(settings);
+    const decimals = step === 0.25 ? 2 : 1;
+    const options = { Disabled: "disabled" };
+    for (let v = 0; v <= 5 + 1e-9; v += step) {
+        const label = v.toFixed(decimals);
+        options[label] = label;
+    }
+    return options;
+}
+
+function snapLikeThreshold(current, step) {
+    if (current === "disabled") return current;
+    const num = Number(current);
+    if (!isFinite(num)) return current;
+    const snapped = Math.round(num / step) * step + 5;
+    const clamped = Math.max(0, Math.min(5, snapped));
+    return clamped.toFixed(step === 0.25 ? 2 : 1);
 }
