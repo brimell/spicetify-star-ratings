@@ -1,32 +1,32 @@
 import * as api from "./api";
-import { createStars, setRating, getMouseoverRating, findStars, toRatingString } from "./stars";
-import { Settings, getSettings, saveSettings, getPlaylistUris, savePlaylistUris, getRatedFolderUri, saveRatedFolderUri } from "./settings";
-import { Settings as SettingsUi } from "./settings-ui";
-import { SortModal } from "./sort-modal";
-import { WeightedPlaylistModal } from "./weighted-playlist-modal";
+import { tracklistColumnCss } from "./css/css";
 import { RatingPlaylistModal } from "./rating-playlist-modal";
 import {
     findFolderByName,
     findFolderByUri,
+    getAlbumRating,
     getAllPlaylistItems,
+    getPlaylistNames,
     getRatingsByTrack,
     mergeAddedTrack,
-    getPlaylistNames,
-    getAlbumRating,
-    sortPlaylistByRating,
     parseRatingPlaylistName,
+    sortPlaylistByRating,
 } from "./ratings";
-import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
-import { tracklistColumnCss } from "./css/css";
+import { Settings, getPlaylistUris, getRatedFolderUri, getSettings, savePlaylistUris, saveRatedFolderUri, saveSettings } from "./settings";
+import { Settings as SettingsUi } from "./settings-ui";
+import { SortModal } from "./sort-modal";
+import { createStars, findStars, getMouseoverRating, setRating, toRatingString } from "./stars";
+import { PlaylistUris, Ratings } from "./types/store";
 import {
+    getNowPlayingTrackUri,
+    getPlayerContext,
     getTracklistTrackUri,
     isAlbumPage,
-    trackUriToTrackId,
-    getNowPlayingTrackUri,
-    weightedPlaybackEnabledForPlaylist,
     setWeightedPlaybackEnabledForPlaylist,
-    getPlayerContext,
+    trackUriToTrackId,
+    weightedPlaybackEnabledForPlaylist,
 } from "./utils/utils";
+import { WeightedPlaylistModal } from "./weighted-playlist-modal";
 
 export let settings: Settings | null = null;
 
@@ -760,13 +760,15 @@ async function observerCallback(keys) {
 
     oldNowPlayingWidget = nowPlayingWidget;
     let selector =
-        settings.nowPlayingStarsPosition === "left" ? ".main-nowPlayingWidget-nowPlaying .main-trackInfo-container" : ".main-nowPlayingBar-right div";
+        settings.nowPlayingStarsPosition === "left"
+            ? '[data-testid="now-playing-widget-v2"]'
+            : ".main-nowPlayingBar-right div";
     nowPlayingWidget = document.querySelector(selector);
     if (nowPlayingWidget && !nowPlayingWidget.isEqualNode(oldNowPlayingWidget)) {
         nowPlayingWidgetStarData = createStars("now-playing", 16);
         nowPlayingWidgetStarData[0].style.marginLeft = "8px";
         nowPlayingWidgetStarData[0].style.marginRight = "8px";
-        if (settings.nowPlayingStarsPosition === "left") nowPlayingWidget.after(nowPlayingWidgetStarData[0]);
+        if (settings.nowPlayingStarsPosition === "left") nowPlayingWidget.append(nowPlayingWidgetStarData[0]);
         else nowPlayingWidget.prepend(nowPlayingWidgetStarData[0]);
         addStarsListeners(nowPlayingWidgetStarData, getNowPlayingTrackUri);
         updateNowPlayingWidget();
