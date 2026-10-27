@@ -1,4 +1,5 @@
 import * as api from "./api";
+import { isAppLaterThan } from "./api";
 import { createStars, setRating, getMouseoverRating, findStars, toRatingString } from "./stars";
 import { Settings, getSettings, saveSettings, getPlaylistUris, savePlaylistUris, getRatedFolderUri, saveRatedFolderUri } from "./settings";
 import { Settings as SettingsUi } from "./settings-ui";
@@ -375,7 +376,7 @@ async function handleAddRating(trackUri: string, newRating: number) {
         const contents = await api.getContents(); // get fresh contents
 
         let ratedFolder = ratedFolderUri
-            ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
+            ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
             : findFolderByName(contents, "Rated");
 
         if (!ratedFolder) {
@@ -759,16 +760,17 @@ async function observerCallback(keys) {
     }
 
     oldNowPlayingWidget = nowPlayingWidget;
-    let selector =
-        settings.nowPlayingStarsPosition === "left"
-            ? '[data-testid="now-playing-widget-v2"]'
-            : ".main-nowPlayingBar-right div";
+    let leftselector = (await isAppLaterThan("1.3.6.1921.g7086c071a616"))
+        ? '[data-testid="now-playing-widget-v2"]'
+        : ".main-nowPlayingWidget-nowPlaying .main-trackInfo-container";
+    let selector = settings.nowPlayingStarsPosition === "left" ? leftselector : ".main-nowPlayingBar-right div";
     nowPlayingWidget = document.querySelector(selector);
     if (nowPlayingWidget && !nowPlayingWidget.isEqualNode(oldNowPlayingWidget)) {
         nowPlayingWidgetStarData = createStars("now-playing", 16);
         nowPlayingWidgetStarData[0].style.marginLeft = "8px";
         nowPlayingWidgetStarData[0].style.marginRight = "8px";
-        if (settings.nowPlayingStarsPosition === "left") nowPlayingWidget.append(nowPlayingWidgetStarData[0]);
+        if (settings.nowPlayingStarsPosition === "left")
+            nowPlayingWidget[(await isAppLaterThan("1.3.6.1921.g7086c071a616")) ? "append" : "after"](nowPlayingWidgetStarData[0]);
         else nowPlayingWidget.prepend(nowPlayingWidgetStarData[0]);
         addStarsListeners(nowPlayingWidgetStarData, getNowPlayingTrackUri);
         updateNowPlayingWidget();
@@ -890,7 +892,7 @@ async function loadRatings() {
     //   2. Migrate users coming from the dynamic-scanning era (empty localStorage).
     const contents = await api.getContents();
     const ratedFolder = ratedFolderUri
-        ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
+        ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
         : findFolderByName(contents, "Rated");
 
     if (ratedFolder) {
@@ -1079,7 +1081,7 @@ async function main() {
             // Fetch folder contents fresh so we're always in-sync
             api.getContents().then((contents) => {
                 const ratedFolder = ratedFolderUri
-                    ? (findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated"))
+                    ? findFolderByUri(contents, ratedFolderUri) ?? findFolderByName(contents, "Rated")
                     : findFolderByName(contents, "Rated");
 
                 const folderItem = ratedFolder?.items.find((item) => item.uri === playlistUri && item.type === "playlist");
