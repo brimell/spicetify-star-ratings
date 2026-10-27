@@ -1,32 +1,32 @@
 import * as api from "./api";
-import { tracklistColumnCss } from "./css/css";
+import { createStars, setRating, getMouseoverRating, findStars, toRatingString } from "./stars";
+import { Settings, getSettings, saveSettings, getPlaylistUris, savePlaylistUris, getRatedFolderUri, saveRatedFolderUri } from "./settings";
+import { Settings as SettingsUi } from "./settings-ui";
+import { SortModal } from "./sort-modal";
+import { WeightedPlaylistModal } from "./weighted-playlist-modal";
 import { RatingPlaylistModal } from "./rating-playlist-modal";
 import {
     findFolderByName,
     findFolderByUri,
-    getAlbumRating,
     getAllPlaylistItems,
-    getPlaylistNames,
     getRatingsByTrack,
     mergeAddedTrack,
-    parseRatingPlaylistName,
+    getPlaylistNames,
+    getAlbumRating,
     sortPlaylistByRating,
+    parseRatingPlaylistName,
 } from "./ratings";
-import { Settings, getPlaylistUris, getRatedFolderUri, getSettings, savePlaylistUris, saveRatedFolderUri, saveSettings } from "./settings";
-import { Settings as SettingsUi } from "./settings-ui";
-import { SortModal } from "./sort-modal";
-import { createStars, findStars, getMouseoverRating, setRating, toRatingString } from "./stars";
-import { PlaylistUris, Ratings } from "./types/store";
+import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
+import { tracklistColumnCss } from "./css/css";
 import {
-    getNowPlayingTrackUri,
-    getPlayerContext,
     getTracklistTrackUri,
     isAlbumPage,
-    setWeightedPlaybackEnabledForPlaylist,
     trackUriToTrackId,
+    getNowPlayingTrackUri,
     weightedPlaybackEnabledForPlaylist,
+    setWeightedPlaybackEnabledForPlaylist,
+    getPlayerContext,
 } from "./utils/utils";
-import { WeightedPlaylistModal } from "./weighted-playlist-modal";
 
 export let settings: Settings | null = null;
 
