@@ -18,9 +18,9 @@ import {
     parseRatingPlaylistName,
 } from "./ratings";
 import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
-import { tracklistColumnCss } from "./css/css";
+import { GridCoordinator } from "./grid-coordinator";
 import {
-    getTracklistTrackUri,
+    getRowTrackUri,
     isAlbumPage,
     trackUriToTrackId,
     getNowPlayingTrackUri,
@@ -31,18 +31,16 @@ import {
 
 export let settings: Settings | null = null;
 
+const { isInsideSearchBarDropdown, getAllHeaderRows, getAllTrackRows, getRowInsertionPoint } = GridCoordinator;
+
 let ratedFolderUri: string | null = null;
 let ratings: Ratings = {};
 let playlistNames = {};
 export let playlistUris: PlaylistUris = {};
 
-let originalTracklistHeaderCss = null;
-let originalTracklistTrackCss = null;
 let oldMainElement = null;
 let mainElement = null;
 let mainElementObserver = null;
-let tracklists: HTMLCollectionOf<Element> = [];
-let oldTracklists = [];
 
 let oldNowPlayingWidget = null;
 let nowPlayingWidget = null;
@@ -572,172 +570,159 @@ function addStarsListeners(starData, getTrackUri) {
     }
 }
 
-function restoreTracklist() {
-    const tracklistHeaders = document.querySelectorAll(".main-trackList-trackListHeaderRow");
-    tracklistHeaders.forEach((tracklistHeader) => {
-        tracklistHeader.style["grid-template-columns"] = originalTracklistHeaderCss;
-        const ratingHeader = tracklistHeader.querySelector(".starRatingsHeader");
-        if (ratingHeader) {
-            ratingHeader.remove();
-            let lastColumn = tracklistHeader.querySelector(".main-trackList-rowSectionEnd");
-            let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
-            lastColumn.setAttribute("aria-colindex", (colIndexInt - 1).toString());
-        }
-    });
+const SEPARATE_COL_CLASSES = ["spicetify-ext-separate-col", "starRatingsSeparateCol"];
+let isTracklistScheduled = false;
 
-    for (const tracklist of Array.from(tracklists)) {
-        const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
-        for (const track of Array.from(tracks)) {
-            let ratingColumn = track.querySelector(".starRatings");
-            if (!ratingColumn) continue;
-            track.style["grid-template-columns"] = originalTracklistTrackCss;
-            ratingColumn.remove();
-            let lastColumn = track.querySelector(".main-trackList-rowSectionEnd");
-            let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
-            lastColumn.setAttribute("aria-colindex", (colIndexInt - 1).toString());
-        }
-    }
+/** Remove every injected star cell/header and let the coordinator refit the grids. */
+function restoreTracklist() {
+    document.querySelectorAll(".starRatingsHeader, .starRatings").forEach((el) => el.remove());
+    document.querySelectorAll<HTMLElement>("[data-star-ratings-uri]").forEach((row) => {
+        delete row.dataset.starRatingsUri;
+    });
+    GridCoordinator.scheduleFit(true);
 }
 
-function updateTracklist() {
+// Order of separate columns, left to right: [DJ Info] [Star Ratings] [DJ Prep] [native last cell].
+// `self` is excluded so we never call insertBefore(node, node), which removes and re-inserts the
+// node (two mutations) and would retrigger MutationObservers in a loop.
+function getSeparateAnchor(grid: Element, ip: Element, self: Element): Element {
+    const djInfoSep = grid.querySelector(".djInfoSeparateCol");
+    const djPrepSep = grid.querySelector(".djPrepSeparateCol");
+    let anchor: Element | null;
+    if (djPrepSep && !(djInfoSep && djInfoSep.compareDocumentPosition(djPrepSep) & Node.DOCUMENT_POSITION_PRECEDING)) anchor = djPrepSep;
+    else if (djInfoSep) anchor = djInfoSep.nextElementSibling;
+    else anchor = ip;
+    if (anchor === self) anchor = self.nextElementSibling;
+    return anchor ?? ip;
+}
+
+// Docked mode: stars live inside the native last cell, before any other extension's docked content.
+function getDockedAnchor(ip: Element, isHeader: boolean): Node | null {
+    const djPrep = ip.querySelector(isHeader ? ".djprep-header-wrapper" : ".djprep-row-wrapper");
+    if (djPrep) return djPrep;
+    const djInfo = ip.querySelector(isHeader ? ".djInfoHeaderCol" : ".djInfoList");
+    if (djInfo) return djInfo.nextSibling;
+    return ip.firstChild;
+}
+
+function updateTracklist(forceRefit = false) {
     // Check if showing playlist stars is enabled
     if (!settings.showPlaylistStars) return;
-
-    // Store current tracklists as oldTracklists
-    oldTracklists = tracklists;
-    // Update tracklists
-    tracklists = Array.from(document.querySelectorAll(".main-trackList-indexable"));
-    // Check if tracklists have changed
-    let tracklistsChanged = tracklists.length !== oldTracklists.length;
-
-    // Check if individual tracklists have changed
-    for (let i = 0; i < tracklists.length; i++) {
-        if (!tracklists[i].isEqualNode(oldTracklists[i])) tracklistsChanged = true;
-    }
-
-    // Reset CSS if tracklists have changed
-    if (tracklistsChanged) {
-        originalTracklistHeaderCss = null;
-        originalTracklistTrackCss = null;
-    }
-
-    // Define CSS for different tracklist columns
-
-    createStarsForTracklists(tracklists);
+    if (isTracklistScheduled && !forceRefit) return;
+    isTracklistScheduled = true;
+    setTimeout(() => {
+        isTracklistScheduled = false;
+        createStarsForTracklists(forceRefit);
+    }, 120);
 }
 
-function createStarsForTracklists(tracklists: HTMLCollectionOf<Element>) {
-    // Store new tracklist header CSS
-    let newTracklistHeaderCss = null;
-    const tracklistHeaders = document.querySelectorAll(".main-trackList-trackListHeaderRow");
-    // No tracklist header on Artist page
-    tracklistHeaders.forEach((tracklistHeader) => {
-        if (tracklistHeader.querySelector(".starRatingsHeader")) return; // already injected
+function createStarsForTracklists(forceRefit = false) {
+    if (!settings.showPlaylistStars) return;
 
-        let lastColumn = tracklistHeader.querySelector(".main-trackList-rowSectionEnd");
-        let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
-
-        // Set tracklist header CSS based on column index
-        if (!originalTracklistHeaderCss) originalTracklistHeaderCss = getComputedStyle(tracklistHeader).gridTemplateColumns;
-        if (originalTracklistHeaderCss && tracklistColumnCss[colIndexInt]) {
-            tracklistHeader.style["grid-template-columns"] = tracklistColumnCss[colIndexInt];
-            newTracklistHeaderCss = tracklistColumnCss[colIndexInt];
-        }
-
-        // Inject a header cell at the same column position as the stars cells in track rows
-        lastColumn.setAttribute("aria-colindex", (colIndexInt + 1).toString());
-        const ratingHeader = document.createElement("div");
-        ratingHeader.setAttribute("aria-colindex", colIndexInt.toString());
-        ratingHeader.role = "columnheader";
-        ratingHeader.style.display = "flex";
-        ratingHeader.style.alignItems = "center";
-        ratingHeader.classList.add("main-trackList-rowSectionVariable");
-        ratingHeader.classList.add("starRatingsHeader");
-        const ratingHeaderLabel = document.createElement("span");
-        ratingHeaderLabel.textContent = "Ratings";
-        const existingLabel = tracklistHeader.querySelector("[role='columnheader'] span");
-        if (existingLabel) {
-            ratingHeaderLabel.className = existingLabel.className;
-            for (const attr of Array.from(existingLabel.attributes)) {
-                if (attr.name !== "class") ratingHeaderLabel.setAttribute(attr.name, attr.value);
-            }
-        }
-        ratingHeader.appendChild(ratingHeaderLabel);
-        tracklistHeader.insertBefore(ratingHeader, lastColumn);
+    // Never leave stars inside search popovers/comboboxes
+    document.querySelectorAll(".starRatingsHeader, .starRatings").forEach((el) => {
+        if (isInsideSearchBarDropdown(el)) el.remove();
     });
 
-    // Iterate through each tracklist
-    for (const tracklist of tracklists) {
-        const tracks = tracklist.getElementsByClassName("main-trackList-trackListRow");
-        // Iterate through each track
-        for (const track of tracks) {
-            // Function to get heart element of the track
-            const getHeart = () => {
-                return (
-                    track.getElementsByClassName("main-addButton-button")[0] ??
-                    track.querySelector(".main-trackList-rowHeartButton") ??
-                    track.querySelector("button[class*='buttonTertiary-iconOnly']") ??
-                    track.querySelector("button[aria-label='Add to playlist']")
-                );
-            };
+    // No tracklist header on the Artist page, so headers are optional
+    getAllHeaderRows().forEach((header) => {
+        const ip = getRowInsertionPoint(header, true);
+        if (!ip) return;
+        ip.classList.add("spicetify-ext-lastcol-host");
 
-            let ratingColumn = track.querySelector(".starRatings");
-            // Add column for stars if not already present
-            if (!ratingColumn) {
-                let lastColumn = track.querySelector(".main-trackList-rowSectionEnd");
-                let colIndexInt = parseInt(lastColumn.getAttribute("aria-colindex"));
-
-                lastColumn.setAttribute("aria-colindex", (colIndexInt + 1).toString());
-                ratingColumn = document.createElement("div");
-                ratingColumn.setAttribute("aria-colindex", colIndexInt.toString());
-                ratingColumn.role = "gridcell";
-                ratingColumn.style.display = "flex";
-                ratingColumn.classList.add("main-trackList-rowSectionVariable");
-                ratingColumn.classList.add("starRatings");
-                track.insertBefore(ratingColumn, lastColumn);
-
-                if (!originalTracklistTrackCss) originalTracklistTrackCss = getComputedStyle(track).gridTemplateColumns;
-                if (tracklistColumnCss[colIndexInt])
-                    track.style["grid-template-columns"] = newTracklistHeaderCss ? newTracklistHeaderCss : tracklistColumnCss[colIndexInt];
+        let ratingHeader = header.querySelector<HTMLElement>(".starRatingsHeader");
+        if (!ratingHeader) {
+            ratingHeader = document.createElement("div");
+            ratingHeader.className = "starRatingsHeader";
+            const label = document.createElement("span");
+            label.textContent = "Ratings";
+            // Reuse Spotify's own header label styling
+            const existingLabel = header.querySelector("[role='columnheader'] span");
+            if (existingLabel) {
+                label.className = existingLabel.className;
+                for (const attr of Array.from(existingLabel.attributes)) {
+                    if (attr.name !== "class") label.setAttribute(attr.name, attr.value);
+                }
             }
+            ratingHeader.appendChild(label);
+        }
 
-            const hasStars = track.getElementsByClassName("stars").length > 0;
-            if (hasStars) continue; // avoid rather expensive getTracklistTrackUri()
+        if (settings.useSeparateColumn) {
+            const grid = ip.parentElement as HTMLElement;
+            const anchor = getSeparateAnchor(grid, ip, ratingHeader);
+            ratingHeader.classList.add(...SEPARATE_COL_CLASSES);
+            ratingHeader.setAttribute("role", "columnheader");
+            ratingHeader.style.cssText = "display: flex; align-items: center; justify-content: center; flex-shrink: 0;";
+            if (ratingHeader.parentElement !== grid || ratingHeader.nextElementSibling !== anchor) grid.insertBefore(ratingHeader, anchor);
+        } else {
+            ratingHeader.classList.remove(...SEPARATE_COL_CLASSES);
+            ratingHeader.removeAttribute("role");
+            ratingHeader.style.cssText =
+                "display: inline-flex; align-items: center; justify-content: center; width: 80px; margin-right: 16px; flex-shrink: 0;";
+            const target = getDockedAnchor(ip, true);
+            if (ratingHeader.parentElement !== ip || (target !== ratingHeader && ratingHeader.nextSibling !== target))
+                ip.insertBefore(ratingHeader, target);
+        }
+    });
 
-            const trackUri = getTracklistTrackUri(track);
-            if (!trackUri) continue;
+    for (const track of getAllTrackRows()) {
+        const trackUri = getRowTrackUri(track);
+        if (!trackUri) continue;
+        const ip = getRowInsertionPoint(track, false);
+        if (!ip) continue;
+        ip.classList.add("spicetify-ext-lastcol-host");
 
-            // Create stars for the track and set its rating
+        // Spotify reuses row DOM nodes while virtual-scrolling: rebuild the stars when the URI changes
+        let ratingColumn = track.querySelector<HTMLElement>(".starRatings");
+        const uriChanged = track.dataset.starRatingsUri !== trackUri;
+        track.dataset.starRatingsUri = trackUri;
+
+        if (!ratingColumn || uriChanged) {
+            ratingColumn?.remove();
+            ratingColumn = document.createElement("div");
+            ratingColumn.className = "starRatings";
+
             const starData = createStars(trackUriToTrackId(trackUri), 16);
             const stars = starData[0];
-            const starElements = starData[1];
-            const label = starData[2];
-            const currentRating = getTrackRating(trackUri) ?? 0.0;
-
-            // Append stars to rating column and set listeners
             ratingColumn.appendChild(stars);
-            setRating(starElements, currentRating, label);
-            addStarsListeners(
-                starData,
-                () => {
-                    return trackUri;
-                },
-                getHeart,
-            );
-
-            // Set visibility of stars based on rating
+            setRating(starData[1], getTrackRating(trackUri) ?? 0.0, starData[2]);
+            addStarsListeners(starData, () => trackUri);
             stars.style.visibility = typeof ratings[trackUri] !== "undefined" ? "visible" : "hidden";
 
-            // Add listeners for hovering over a track in the tracklist
-            track.addEventListener("mouseover", () => {
-                stars.style.visibility = "visible";
-            });
+            // Hover listeners are bound once per row element, and read the row's current URI
+            if (!track.dataset.starRatingsBound) {
+                track.dataset.starRatingsBound = "true";
+                const rowStars = () => track.querySelector<HTMLElement>(".starRatings .stars");
+                track.addEventListener("mouseover", () => {
+                    const el = rowStars();
+                    if (el) el.style.visibility = "visible";
+                });
+                track.addEventListener("mouseout", () => {
+                    const el = rowStars();
+                    const uri = track.dataset.starRatingsUri;
+                    if (el && uri) el.style.visibility = typeof ratings[uri] !== "undefined" ? "visible" : "hidden";
+                });
+            }
+        }
 
-            track.addEventListener("mouseout", () => {
-                stars.style.visibility = typeof ratings[trackUri] !== "undefined" ? "visible" : "hidden";
-            });
+        if (settings.useSeparateColumn) {
+            const grid = ip.parentElement as HTMLElement;
+            const anchor = getSeparateAnchor(grid, ip, ratingColumn);
+            ratingColumn.classList.add(...SEPARATE_COL_CLASSES);
+            ratingColumn.setAttribute("role", "gridcell");
+            ratingColumn.style.cssText = "display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 10;";
+            if (ratingColumn.parentElement !== grid || ratingColumn.nextElementSibling !== anchor) grid.insertBefore(ratingColumn, anchor);
+        } else {
+            ratingColumn.classList.remove(...SEPARATE_COL_CLASSES);
+            ratingColumn.removeAttribute("role");
+            ratingColumn.style.cssText = "display: inline-flex; align-items: center; margin-right: 14px; flex-shrink: 0; z-index: 10;";
+            const target = getDockedAnchor(ip, false);
+            if (ratingColumn.parentElement !== ip || (target !== ratingColumn && ratingColumn.nextSibling !== target))
+                ip.insertBefore(ratingColumn, target);
         }
     }
+
+    GridCoordinator.scheduleFit(forceRefit);
 }
 
 function onClickShowPlaylistStars() {
@@ -782,7 +767,9 @@ async function observerCallback(keys) {
     oldPlayButton = playButton;
 
     // get album play button in order to add stars to the right of it
-    playButton = document.querySelector(".main-actionBar-ActionBar .ix_8kg3iUb9VS5SmTnBY");
+    playButton =
+        document.querySelector(".main-actionBar-ActionBar .ix_8kg3iUb9VS5SmTnBY") ??
+        document.querySelector('[data-testid="action-bar-row"] > *:last-child');
     if (playButton && !playButton.isEqualNode(oldPlayButton) && isAlbumPage() !== null) {
         albumStarData = createStars("album", 32);
         playButton.after(albumStarData[0]);
