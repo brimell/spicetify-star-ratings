@@ -77,7 +77,15 @@ If the new rating is the same as the old one, the old rating is removed. If they
 https://github.com/jeroentvb/spicetify-playlist-icons provides a nice view of the playlist icons when you are adding to them manually ![alt text](imgs/example.png)
 
 ## It Doesn't Work!
-Please [open an issue](https://github.com/brimell/spicetify-star-ratings/issues/new), we want this extension to work as smoothly as possible!
+Please [open an issue](https://github.com/brimell/spicetify-star-ratings/issues/new?template=bug_report.md), we want this extension to work as smoothly as possible!
+
+### Maintenance
+Please note that I (@jullanggit) currently maintain this in my free time and thus may not always have the time or motivation to reproduce, debug and fix issues quickly.
+
+### You can help!
+Most issues arise due to spotify changing some internal apis or structures. These issues can be debugged without much expertise with the help of LLM's. Give one a description of your issue, a copy of the debug console and access to the source code, and chances are you can fix the issue together.
+
+If you have produced a fix, please [open a PR](https://github.com/brimell/spicetify-star-ratings/compare) to fix it for everyone! Reviewing a change takes significantly less time than reproducing, debugging and fixing from scratch so I should be able to merge it quickly :)
 
 ## Performance
 The cost of adding a new rating scales with the size of the playlist the song is being added to. 
