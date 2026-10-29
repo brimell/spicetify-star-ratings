@@ -1,18 +1,41 @@
 import { getLocalStorageData, setLocalStorageData } from "../api";
 
-export function getTracklistTrackUri(tracklistElement: Element) {
-    let values = Object.values(tracklistElement);
-    if (!values) return null;
+export function getTracklistTrackUri(tracklistElement: Element): string | null {
+    const fiberKey = Object.keys(tracklistElement).find((k) => k.startsWith("__reactFiber$"));
+    if (!fiberKey) return null;
 
-    const searchFrom = values[0]?.pendingProps?.children?.[0]?.props?.children ?? values[0]?.pendingProps?.children?.props?.value?.item;
+    const isTrackUri = (v: unknown): v is string => typeof v === "string" && v.startsWith("spotify:track:");
 
-    return (
-        searchFrom?.uri ||
-        searchFrom?.props?.uri ||
-        searchFrom?.props?.children?.props?.uri ||
-        searchFrom?.props?.children?.props?.children?.props?.uri ||
-        searchFrom?.[0]?.props?.uri
-    );
+    const seen = new Set<object>();
+
+    // Walk a node's subtree via child/sibling. Never crosses above the root
+    // because the root's own siblings are other rows.
+    const search = (node: any): string | null => {
+        if (!node || seen.has(node)) return null;
+        seen.add(node);
+
+        const props = node.memoizedProps ?? node.pendingProps;
+        if (isTrackUri(props?.uri)) return props.uri;
+
+        return search(node.child) ?? search(node.sibling);
+    };
+
+    const root = (tracklistElement as any)[fiberKey];
+    if (!root) return null;
+
+    // Check the row fiber's own props first (usually absent, but cheap).
+    const rootProps = root.memoizedProps ?? root.pendingProps;
+    if (isTrackUri(rootProps?.uri)) return rootProps.uri;
+
+    // Walk the root's children chain only. Do NOT call search(root) directly,
+    // because search() follows sibling links — which from the root would leak
+    // into the next row's fiber subtree.
+    for (let child = root.child; child; child = child.sibling) {
+        const found = search(child);
+        if (found) return found;
+    }
+
+    return null;
 }
 
 export function isAlbumPage() {

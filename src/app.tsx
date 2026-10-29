@@ -680,9 +680,6 @@ function createStarsForTracklists(tracklists: HTMLCollectionOf<Element>) {
                     track.querySelector("button[aria-label='Add to playlist']")
                 );
             };
-            const hasStars = track.getElementsByClassName("stars").length > 0;
-            const trackUri = getTracklistTrackUri(track);
-            const isTrack = trackUri.includes("track");
 
             let ratingColumn = track.querySelector(".starRatings");
             // Add column for stars if not already present
@@ -704,8 +701,11 @@ function createStarsForTracklists(tracklists: HTMLCollectionOf<Element>) {
                     track.style["grid-template-columns"] = newTracklistHeaderCss ? newTracklistHeaderCss : tracklistColumnCss[colIndexInt];
             }
 
-            // Continue to the next track if no heart, no track URI, has stars already, or not a track
-            if (!trackUri || hasStars || !isTrack) continue;
+            const hasStars = track.getElementsByClassName("stars").length > 0;
+            if (hasStars) continue; // avoid rather expensive getTracklistTrackUri()
+
+            const trackUri = getTracklistTrackUri(track);
+            if (!trackUri) continue;
 
             // Create stars for the track and set its rating
             const starData = createStars(trackUriToTrackId(trackUri), 16);
