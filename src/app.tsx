@@ -745,37 +745,20 @@ async function observerCallback(keys) {
     }
 
     oldNowPlayingWidget = nowPlayingWidget;
-
-    const newLeftWidget = document.querySelector(
-        '[data-testid="now-playing-widget-v2"]'
-    );
-    const isLeftPosition = settings.nowPlayingStarsPosition === "left";
-
-    nowPlayingWidget = isLeftPosition
-        ? newLeftWidget ??
-        document.querySelector(
-            ".main-nowPlayingWidget-nowPlaying .main-trackInfo-container"
-        )
-        : document.querySelector(".main-nowPlayingBar-right div");
-
+    let leftselector = (await isAppLaterThan("1.3.6.1921.g7086c071a616"))
+        ? '[data-testid="now-playing-widget-v2"]'
+        : ".main-nowPlayingWidget-nowPlaying .main-trackInfo-container";
+    let selector = settings.nowPlayingStarsPosition === "left" ? leftselector : ".main-nowPlayingBar-right div";
+    nowPlayingWidget = document.querySelector(selector);
     if (nowPlayingWidget && !nowPlayingWidget.isEqualNode(oldNowPlayingWidget)) {
         nowPlayingWidgetStarData = createStars("now-playing", 16);
         nowPlayingWidgetStarData[0].style.marginLeft = "8px";
         nowPlayingWidgetStarData[0].style.marginRight = "8px";
-
-        if (isLeftPosition) {
-            if (nowPlayingWidget === newLeftWidget) {
-                nowPlayingWidget.append(nowPlayingWidgetStarData[0]);
-            } else {
-                nowPlayingWidget.after(nowPlayingWidgetStarData[0]);
-            }
-        } else {
-            nowPlayingWidget.prepend(nowPlayingWidgetStarData[0]);
-        }
-
+        if (settings.nowPlayingStarsPosition === "left")
+            nowPlayingWidget[(await isAppLaterThan("1.3.6.1921.g7086c071a616")) ? "append" : "after"](nowPlayingWidgetStarData[0]);
+        else nowPlayingWidget.prepend(nowPlayingWidgetStarData[0]);
         addStarsListeners(nowPlayingWidgetStarData, getNowPlayingTrackUri);
         updateNowPlayingWidget();
-
         if (settings.enableKeyboardShortcuts) {
             getRegisterKeyboardShortcuts(keys)();
         }
