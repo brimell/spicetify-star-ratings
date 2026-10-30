@@ -31,6 +31,8 @@ import {
 
 export let settings: Settings | null = null;
 
+
+
 let ratedFolderUri: string | null = null;
 let ratings: Ratings = {};
 let playlistNames = {};
@@ -745,7 +747,57 @@ function onClickShowPlaylistStars() {
     else restoreTracklist();
 }
 
+function styleRatingContextMenu() {
+    if (!document.getElementById("star-ratings-menu-style")) {
+        const style = document.createElement("style");
+        style.id = "star-ratings-menu-style";
+        style.textContent = `
+            [role="menu"] button:has(svg[id^="stars-rating-menu-"])
+                > div:has(svg[id^="stars-rating-menu-"]) {
+                width: 80px !important;
+                min-width: 80px !important;
+                flex: 0 0 80px !important;
+                overflow: visible !important;
+            }
+
+            [role="menu"] button:has(svg[id^="stars-rating-menu-"])
+                > div > svg {
+                width: 80px !important;
+                min-width: 80px !important;
+                height: 16px !important;
+                overflow: visible !important;
+                --encore-icon-width: 80px;
+                --encore-icon-height: 16px;
+            }
+
+            .star-ratings-menu-label::before {
+                content: "";
+                display: inline-block;
+                width: 16px;
+                height: 16px;
+                margin-right: 12px;
+                vertical-align: -2px;
+                background: var(--spice-button);
+                mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M20.388 10.918L32 12.118l-8.735 7.749L25.914 31.4l-9.893-6.088L6.127 31.4l2.695-11.533L0 12.118l11.547-1.2L16.026.6z'/%3E%3C/svg%3E") center / contain no-repeat;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    document.querySelectorAll<HTMLElement>(
+        '[role="menu"] button span[data-encore-id="type"]',
+    ).forEach((label) => {
+        if (
+            label.textContent?.trim() === "Rate track" &&
+            !label.classList.contains("star-ratings-menu-label")
+        ) {
+            label.classList.add("star-ratings-menu-label");
+        }
+    });
+}
+
 async function observerCallback(keys) {
+    styleRatingContextMenu();
     oldMainElement = mainElement;
     mainElement = document.querySelector("main");
     if (mainElement && !mainElement.isEqualNode(oldMainElement)) {
@@ -1021,7 +1073,92 @@ async function main() {
     Spicetify.Platform.History.listen(async () => {
         await updateAlbumStars();
     });
+    const ratingMenuItems: Spicetify.ContextMenu.Item[] = [];
 
+    for (let quarter = 0; quarter <= 20; quarter++) {
+        const rating = quarter / 4;
+
+        // Reuse the extension's actual star graphics and colors.
+        const preview = createStars(`rating-menu-${quarter}`, 16);
+        setRating(preview[1], rating, preview[2]);
+
+        const svg = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "svg",
+        );
+
+        svg.setAttribute("viewBox", "0 0 80 16");
+        svg.setAttribute("width", "80");
+        svg.setAttribute("height", "16");
+        svg.style.cssText = "width:80px;min-width:80px;height:16px;";
+
+        preview[1].forEach(([star], index) => {
+            const copy = star.cloneNode(true) as SVGElement;
+            copy.setAttribute("x", String(index * 16));
+            copy.setAttribute("y", "0");
+            copy.setAttribute("width", "16");
+            copy.setAttribute("height", "16");
+            svg.appendChild(copy);
+        });
+
+        const menuItem = new Spicetify.ContextMenu.Item(
+            toRatingString(rating),
+            (uris) => {
+                if (
+                    uris.length !== 1 ||
+                    !uris[0].startsWith("spotify:track:")
+                ) return;
+
+                const trackUri = uris[0];
+                const starData = createStars("context-menu", 16);
+
+                getClickListener(
+                    0,
+                    rating,
+                    starData,
+                    () => trackUri,
+                )();
+            },
+            () => {
+                const visible =
+                    settings.quarterStarRatings ||
+                    (settings.halfStarRatings
+                        ? quarter % 2 === 0
+                        : quarter % 4 === 0);
+
+                if (!visible) return false;
+
+                setRating(preview[1], rating, preview[2]);
+                svg.replaceChildren();
+
+                preview[1].forEach(([star], index) => {
+                    const copy = star.cloneNode(true) as SVGElement;
+                    copy.setAttribute("x", String(index * 16));
+                    copy.setAttribute("y", "0");
+                    copy.setAttribute("width", "16");
+                    copy.setAttribute("height", "16");
+                    svg.appendChild(copy);
+                });
+
+                const icon = svg.outerHTML;
+                if (menuItem.icon !== icon) {
+                    menuItem.icon = icon;
+                }
+
+                return true;
+            },
+            svg.outerHTML,
+        );
+        ratingMenuItems.push(menuItem);
+    }
+
+    new Spicetify.ContextMenu.SubMenu(
+        "Rate track",
+        ratingMenuItems,
+        (uris) =>
+            uris.length === 1 &&
+            uris[0].startsWith("spotify:track:"),
+    ).register();
     new Spicetify.ContextMenu.Item(
         "Use as Rated folder",
         (uri) => {
