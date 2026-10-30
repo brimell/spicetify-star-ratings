@@ -760,7 +760,6 @@ async function observerCallback(keys) {
     }
 
     oldNowPlayingWidget = nowPlayingWidget;
-    oldNowPlayingWidget = nowPlayingWidget;
 
     const newLeftWidget = document.querySelector(
         '[data-testid="now-playing-widget-v2"]'
