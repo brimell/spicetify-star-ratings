@@ -38,6 +38,24 @@ export function getTracklistTrackUri(tracklistElement: Element): string | null {
     return null;
 }
 
+/**
+ * Resolve a tracklist row's track URI: React fiber first (fast path), then DOM attributes and
+ * links, which survive markup changes where the fiber layout does not.
+ */
+export function getRowTrackUri(row: Element): string | null {
+    const fromFiber = getTracklistTrackUri(row);
+    if (fromFiber) return fromFiber;
+
+    const attr = row.getAttribute("data-uri") || row.getAttribute("data-context-item-uri");
+    if (attr && attr.startsWith("spotify:track:")) return attr;
+
+    for (const a of Array.from(row.querySelectorAll('a[href*="/track/"]'))) {
+        const m = a.getAttribute("href")?.match(/\/track\/([a-zA-Z0-9]{22})/);
+        if (m) return "spotify:track:" + m[1];
+    }
+    return null;
+}
+
 export function isAlbumPage() {
     const pathname = Spicetify.Platform.History.location.pathname;
     const matches = pathname.match(/album\/(.*)/);
