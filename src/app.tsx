@@ -745,20 +745,56 @@ async function observerCallback(keys) {
     }
 
     oldNowPlayingWidget = nowPlayingWidget;
-    let leftselector = (await isAppLaterThan("1.3.6.1921.g7086c071a616"))
-        ? '[data-testid="now-playing-widget-v2"]'
-        : ".main-nowPlayingWidget-nowPlaying .main-trackInfo-container";
-    let selector = settings.nowPlayingStarsPosition === "left" ? leftselector : ".main-nowPlayingBar-right div";
-    nowPlayingWidget = document.querySelector(selector);
-    if (nowPlayingWidget && !nowPlayingWidget.isEqualNode(oldNowPlayingWidget)) {
+
+    const newLeftWidget = document.querySelector('[data-testid="now-playing-widget-v2"]');
+    const isLeftPosition = settings.nowPlayingStarsPosition === "left";
+
+    // Left position: try the v2 widget and the legacy track info first, then progressively looser
+    // fallbacks (buttons next to the track title, the plain widget) for other client versions.
+    const leftFallbackSelectors = [
+        '.main-nowPlayingWidget-nowPlaying button[aria-label*="hide" i]',
+        '[data-testid="now-playing-widget"] button[aria-label*="hide" i]',
+        '.main-nowPlayingWidget-nowPlaying [data-testid="add-button"]',
+        '[data-testid="now-playing-widget"] [data-testid="add-button"]',
+        ".main-nowPlayingWidget-nowPlaying .main-addButton-button",
+        '[data-testid="now-playing-widget"] .main-trackInfo-container',
+        ".main-trackInfo-container",
+        '[data-testid="now-playing-widget"]',
+        ".main-nowPlayingWidget-nowPlaying",
+    ];
+    const findLeftTarget = () =>
+        newLeftWidget ??
+        document.querySelector(".main-nowPlayingWidget-nowPlaying .main-trackInfo-container") ??
+        leftFallbackSelectors.map((selector) => document.querySelector(selector)).find(Boolean) ??
+        null;
+
+    nowPlayingWidget = isLeftPosition ? findLeftTarget() : document.querySelector(".main-nowPlayingBar-right div");
+
+    // Spotify re-renders the widget and can drop the stars we appended, so also re-create them when
+    // they are no longer attached to the page (not only when the target element changed).
+    const starsDetached = !nowPlayingWidgetStarData || !nowPlayingWidgetStarData[0].isConnected;
+    if (nowPlayingWidget && (!nowPlayingWidget.isEqualNode(oldNowPlayingWidget) || starsDetached)) {
+        if (nowPlayingWidgetStarData) nowPlayingWidgetStarData[0].remove();
         nowPlayingWidgetStarData = createStars("now-playing", 16);
         nowPlayingWidgetStarData[0].style.marginLeft = "8px";
         nowPlayingWidgetStarData[0].style.marginRight = "8px";
-        if (settings.nowPlayingStarsPosition === "left")
-            nowPlayingWidget[(await isAppLaterThan("1.3.6.1921.g7086c071a616")) ? "append" : "after"](nowPlayingWidgetStarData[0]);
-        else nowPlayingWidget.prepend(nowPlayingWidgetStarData[0]);
+        nowPlayingWidgetStarData[0].style.flexShrink = "0";
+
+        if (isLeftPosition) {
+            if (nowPlayingWidget.tagName === "BUTTON" || nowPlayingWidget.getAttribute("data-testid") === "add-button") {
+                nowPlayingWidget.before(nowPlayingWidgetStarData[0]);
+            } else if (nowPlayingWidget.classList.contains("main-trackInfo-container")) {
+                nowPlayingWidget.after(nowPlayingWidgetStarData[0]);
+            } else {
+                nowPlayingWidget.append(nowPlayingWidgetStarData[0]);
+            }
+        } else {
+            nowPlayingWidget.prepend(nowPlayingWidgetStarData[0]);
+        }
+
         addStarsListeners(nowPlayingWidgetStarData, getNowPlayingTrackUri);
         updateNowPlayingWidget();
+
         if (settings.enableKeyboardShortcuts) {
             getRegisterKeyboardShortcuts(keys)();
         }
