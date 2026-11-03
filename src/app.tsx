@@ -19,7 +19,7 @@ import {
 } from "./ratings";
 import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
 import { GridCoordinator } from "./grid-coordinator";
-import { alignHeaderLabel, createColumnResizer } from "./column-resize";
+import { alignHeaderLabel, alignRowCell, createColumnResizer } from "./column-resize";
 import {
     getTracklistTrackUri,
     isAlbumPage,
@@ -737,6 +737,7 @@ function createStarsForTracklists(forceRefit = false) {
             ratingColumn.setAttribute("role", "gridcell");
             ratingColumn.style.cssText = "display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 10;";
             starColumn.applyToCell(ratingColumn);
+            alignRowCell(ratingColumn, ".starRatingsHeader");
             if (ratingColumn.parentElement !== grid || ratingColumn.nextElementSibling !== anchor) grid.insertBefore(ratingColumn, anchor);
         } else {
             ratingColumn.classList.remove(...SEPARATE_COL_CLASSES);

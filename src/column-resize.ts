@@ -60,6 +60,14 @@ export function alignHeaderLabel(header: HTMLElement) {
     setStyleProp(header, "padding-left", left ? nativeLabelInset(header) + "px" : "");
 }
 
+/** Aligns the content of a row cell with the header label above it (same rule as alignHeaderLabel). */
+export function alignRowCell(cell: HTMLElement, headerSelector: string) {
+    const left = HEADER_LABEL_ALIGN === "left";
+    setStyleProp(cell, "justify-content", left ? "flex-start" : "center");
+    const header = document.querySelector<HTMLElement>(headerSelector);
+    setStyleProp(cell, "padding-left", left ? (header?.style.paddingLeft || "0px") : "");
+}
+
 export interface ColumnResizerOptions {
     /** localStorage key that remembers the chosen width */
     storageKey: string;
