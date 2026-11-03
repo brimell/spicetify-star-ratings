@@ -8,8 +8,10 @@
  * in "separate column" mode, inserts named tracks for extension columns, then verifies the result
  * against the computed layout (falling back to borrowing px from the widest middle columns).
  *
- * Exposed as `window.SpicetifyGridCoordinator` (version 2) so other Spicetify extensions that embed
+ * Exposed as `window.SpicetifyGridCoordinator` (version 3) so other Spicetify extensions that embed
  * the same coordinator (for example DJ Info) share one implementation instead of fighting over the grid.
+ * Version 3: an extension cell can declare its own minimum width with `data-ext-col-min` (px), so columns
+ * can be resized narrower than the built-in default. The newest coordinator wins; an older one is cleaned up.
  */
 
 interface ExtraCol {
@@ -38,7 +40,7 @@ export interface GridCoordinatorApi {
 
 export const GridCoordinator: GridCoordinatorApi = (() => {
     const existing = (window as any).SpicetifyGridCoordinator;
-    if (existing && existing.version >= 2) {
+    if (existing && existing.version >= 3) {
         return existing;
     }
     if (existing?.cleanup) {
@@ -353,11 +355,14 @@ export const GridCoordinator: GridCoordinatorApi = (() => {
             for (const def of EXTRA_COL_DEFS) {
                 const samples = g.sepSamples[def.key];
                 if (samples.length > 0) {
-                    let w = def.defaultWidth;
+                    let w = 0;
+                    let floor = def.defaultWidth;
                     samples.forEach((el) => {
+                        const declared = parseInt(el.getAttribute("data-ext-col-min") ?? "", 10);
+                        if (declared > 0) floor = declared;
                         w = Math.max(w, Math.ceil(el.getBoundingClientRect().width));
                     });
-                    extraCols.push({ key: def.key, width: w });
+                    extraCols.push({ key: def.key, width: Math.max(floor, w) });
                 }
             }
             g.grids.forEach((grid) => applyGridFit(grid, need, extraCols));
@@ -432,7 +437,7 @@ export const GridCoordinator: GridCoordinatorApi = (() => {
         });
     }
     const api: GridCoordinatorApi = {
-        version: 2,
+        version: 3,
         isInsideSearchBarDropdown,
         getRowInsertionPoint,
         getAllHeaderRows,

@@ -19,6 +19,7 @@ import {
 } from "./ratings";
 import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
 import { GridCoordinator } from "./grid-coordinator";
+import { alignHeaderLabel, createColumnResizer } from "./column-resize";
 import {
     getTracklistTrackUri,
     isAlbumPage,
@@ -32,6 +33,26 @@ import {
 export let settings: Settings | null = null;
 
 const { isInsideSearchBarDropdown, getAllHeaderRows, getAllTrackRows, getRowInsertionPoint } = GridCoordinator;
+
+// Drag-to-resize for the separate Ratings column (the minimum comes from the settings)
+export const STAR_COL_MIN_LIMIT = 60;
+export const STAR_COL_MAX_LIMIT = 300;
+const starColumn = createColumnResizer({
+    storageKey: "starRatings:colWidth",
+    ariaLabel: "Resize Ratings column",
+    handleClass: "starRatingsResizeHandle",
+    cellSelector: ".starRatingsSeparateCol",
+    defaultWidth: 96,
+    maxWidth: 240,
+    getMin: () => {
+        const v = Number(settings?.starColMinWidth);
+        return Number.isFinite(v) ? Math.min(STAR_COL_MAX_LIMIT, Math.max(STAR_COL_MIN_LIMIT, Math.round(v))) : 96;
+    },
+    refit: () => GridCoordinator.scheduleFit(true),
+});
+function applyStarColumnLimits() {
+    starColumn.applyLimits();
+}
 
 let ratedFolderUri: string | null = null;
 let ratings: Ratings = {};
@@ -652,9 +673,13 @@ function createStarsForTracklists(forceRefit = false) {
             const anchor = getSeparateAnchor(grid, ip, ratingHeader);
             ratingHeader.classList.add(...SEPARATE_COL_CLASSES);
             ratingHeader.setAttribute("role", "columnheader");
-            ratingHeader.style.cssText = "display: flex; align-items: center; justify-content: center; flex-shrink: 0;";
+            ratingHeader.style.cssText = "display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative;";
+            starColumn.applyToCell(ratingHeader);
+            starColumn.attachHandle(ratingHeader);
             if (ratingHeader.parentElement !== grid || ratingHeader.nextElementSibling !== anchor) grid.insertBefore(ratingHeader, anchor);
+            alignHeaderLabel(ratingHeader);
         } else {
+            starColumn.detachHandle(ratingHeader);
             ratingHeader.classList.remove(...SEPARATE_COL_CLASSES);
             ratingHeader.removeAttribute("role");
             ratingHeader.style.cssText =
@@ -711,6 +736,7 @@ function createStarsForTracklists(forceRefit = false) {
             ratingColumn.classList.add(...SEPARATE_COL_CLASSES);
             ratingColumn.setAttribute("role", "gridcell");
             ratingColumn.style.cssText = "display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 10;";
+            starColumn.applyToCell(ratingColumn);
             if (ratingColumn.parentElement !== grid || ratingColumn.nextElementSibling !== anchor) grid.insertBefore(ratingColumn, anchor);
         } else {
             ratingColumn.classList.remove(...SEPARATE_COL_CLASSES);
@@ -999,6 +1025,9 @@ async function main() {
                 updateTracklist,
                 restoreTracklist,
                 redrawNowPlayingStars,
+                applyColumnLimits: applyStarColumnLimits,
+                colMinLimit: STAR_COL_MIN_LIMIT,
+                colMaxLimit: STAR_COL_MAX_LIMIT,
             }),
             isLarge: true,
         });

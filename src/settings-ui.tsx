@@ -76,6 +76,7 @@ function NumberItem({
     max,
     step,
     onclick,
+    commitOnBlur = false,
 }: {
     settings: any;
     name: React.ReactNode;
@@ -84,25 +85,58 @@ function NumberItem({
     max: number;
     step: number;
     onclick?: () => void;
+    /** apply on Enter / blur instead of on every keystroke (so typing "90" isn't clamped at "9") */
+    commitOnBlur?: boolean;
 }) {
     const [value, setValue] = Spicetify.React.useState(settings[field]);
+    const [text, setText] = Spicetify.React.useState(String(settings[field]));
 
-    function handleOnChange(event: React.ChangeEvent<HTMLInputElement>) {
-        const next = parseInt(event.target.value);
-        if (isNaN(next)) return;
+    function commit(raw: string) {
+        const next = parseInt(raw);
+        if (isNaN(next)) {
+            setText(String(settings[field]));
+            return;
+        }
         const floor = Math.max(min, 1);
         const clamped = Math.max(floor, Math.min(max, next));
         settings[field] = clamped;
         setValue(clamped);
+        setText(String(clamped));
         saveSettings(settings);
         if (onclick) onclick();
+    }
+
+    function handleOnChange(event: React.ChangeEvent<HTMLInputElement>) {
+        if (commitOnBlur) {
+            setText(event.target.value);
+            return;
+        }
+        const next = parseInt(event.target.value);
+        if (isNaN(next)) return;
+        commit(event.target.value);
     }
 
     return (
         <div className="popup-row">
             <label className="col description">{name}</label>
             <div className="col action">
-                <input type="number" value={value} min={min} max={max} step={step} onChange={handleOnChange} style={{ width: "100px" }} />
+                {commitOnBlur ? (
+                    <input
+                        type="number"
+                        value={text}
+                        min={min}
+                        max={max}
+                        step={step}
+                        onChange={handleOnChange}
+                        onBlur={() => commit(text)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") commit(text);
+                        }}
+                        style={{ width: "100px" }}
+                    />
+                ) : (
+                    <input type="number" value={value} min={min} max={max} step={step} onChange={handleOnChange} style={{ width: "100px" }} />
+                )}
             </div>
         </div>
     );
@@ -200,6 +234,9 @@ export function Settings({
     updateTracklist,
     restoreTracklist,
     redrawNowPlayingStars,
+    applyColumnLimits,
+    colMinLimit,
+    colMaxLimit,
 }) {
     function handleEnableKeyboardShortcutsCheckboxClick() {
         if (settings.enableKeyboardShortcuts) registerKeyboardShortcuts();
@@ -238,6 +275,22 @@ export function Settings({
                 }
                 field="useSeparateColumn"
                 onclick={() => updateTracklist(true)}
+            />
+            <NumberItem
+                settings={settings}
+                name={
+                    <>
+                        Minimum Ratings column width (px)
+                        <br />
+                        Narrowest the separate Ratings column can be dragged to
+                    </>
+                }
+                field="starColMinWidth"
+                min={colMinLimit}
+                max={colMaxLimit}
+                step={1}
+                commitOnBlur
+                onclick={applyColumnLimits}
             />
             <CheckboxItem
                 settings={settings}
