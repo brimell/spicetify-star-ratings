@@ -20,7 +20,7 @@ import {
 import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
 import { GridCoordinator } from "./grid-coordinator";
 import {
-    getRowTrackUri,
+    getTracklistTrackUri,
     isAlbumPage,
     trackUriToTrackId,
     getNowPlayingTrackUri,
@@ -666,7 +666,7 @@ function createStarsForTracklists(forceRefit = false) {
     });
 
     for (const track of getAllTrackRows()) {
-        const trackUri = getRowTrackUri(track);
+        const trackUri = getTracklistTrackUri(track);
         if (!trackUri) continue;
         const ip = getRowInsertionPoint(track, false);
         if (!ip) continue;
