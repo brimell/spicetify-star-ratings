@@ -39,6 +39,9 @@ export interface Settings {
     likeThreshold: Threshold;
     enableKeyboardShortcuts: boolean;
     showPlaylistStars: boolean;
+    useSeparateColumn: boolean;
+    /** smallest width (px) the Ratings column can be dragged to */
+    starColMinWidth: number;
     maxPlaylistItems: number;
     nowPlayingStarsPosition: NowPlayingStarsPosition;
     newRatingPosition: NewRatingPosition;
@@ -59,6 +62,8 @@ const defaultSettings: Settings = {
     likeThreshold: "4.0",
     enableKeyboardShortcuts: true,
     showPlaylistStars: true,
+    useSeparateColumn: true,
+    starColMinWidth: 96,
     /* Spotify's hard limit is 10,000 */
     maxPlaylistItems: 1000,
     nowPlayingStarsPosition: "left",
