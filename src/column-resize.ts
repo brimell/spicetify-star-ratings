@@ -12,7 +12,12 @@
  * lets the track shrink below its built-in default width.
  */
 
-const NATIVE_SEPARATOR_CLASS = "VJ6bK4WKtyILTdvBAkHv";
+/**
+ * Spotify's separator class: its readable Spicetify name plus the hashed name some clients use when Spicetify
+ * has no mapping for it (for example 1.3.6). Only a fallback: the class is copied from a native separator
+ * whenever one is on screen (see syncHandleClass).
+ */
+const FALLBACK_SEPARATOR_CLASS = "main-trackList-rowSeperator VJ6bK4WKtyILTdvBAkHv";
 
 /**
  * ---- Where to nudge the drag handle (px) ----
@@ -183,20 +188,38 @@ export function createColumnResizer(o: ColumnResizerOptions): ColumnResizer {
         st.id = "ext-col-resize-styles";
         st.textContent = `
             body.extColResizing, body.extColResizing * { cursor: col-resize !important; user-select: none !important; }
+            /* Fallback line in case Spotify's own separator class does not match: zero-specificity selector, so
+               Spotify's rule wins whenever it applies. */
+            :where([role='row']:hover, [role='row']:focus-within) .extColResizeHandle { background: linear-gradient(#ffffff4d, #ffffff4d) 50% / 1px 100% no-repeat; }
             .extColResizeHandle:hover, .extColResizeHandle:focus-visible { background: rgba(255, 255, 255, 0.2); }
         `;
         document.head.appendChild(st);
     }
 
-    /** One of Spotify's own column separators in the same header row (we copy its geometry). */
+    /**
+     * One of Spotify's own column separators in the same header row (we copy its class and geometry).
+     * Found by role only: the aria-label is translated ("Resize columns", "Spaltengröße ändern", ...).
+     */
     function nativeSeparator(header: HTMLElement): HTMLElement | null {
         const row = header.parentElement;
         if (!row) return null;
-        const list = row.querySelectorAll<HTMLElement>('[role="separator"][aria-label="Resize columns"]');
+        const list = row.querySelectorAll<HTMLElement>('[role="columnheader"] [role="separator"]');
         for (const s of Array.from(list)) {
+            if (s.classList.contains("extColResizeHandle") || s.closest(OUR_HEADER_SELECTOR)) continue;
             if (s.getBoundingClientRect().height > 0) return s;
         }
         return null;
+    }
+
+    /** Gives the handle the class(es) of Spotify's own separator, so it is drawn the same way. */
+    function syncHandleClass(h: HTMLElement, native: HTMLElement | null) {
+        const cls = native
+            ? Array.from(native.classList)
+                  .filter((c) => c !== o.handleClass && c !== "extColResizeHandle")
+                  .join(" ")
+            : "";
+        const next = `${o.handleClass} extColResizeHandle ${cls || FALLBACK_SEPARATOR_CLASS}`;
+        if (h.className !== next) h.className = next;
     }
 
     function setStyle(el: HTMLElement, prop: string, value: string) {
@@ -209,6 +232,7 @@ export function createColumnResizer(o: ColumnResizerOptions): ColumnResizer {
      */
     function alignHandle(header: HTMLElement, h: HTMLElement): boolean {
         const n = nativeSeparator(header);
+        if (n) syncHandleClass(h, n);
         const cell = n?.parentElement;
         const hr = header.getBoundingClientRect();
         if (!n || !cell || hr.height <= 0) return false;
@@ -239,7 +263,7 @@ export function createColumnResizer(o: ColumnResizerOptions): ColumnResizer {
         }
         ensureStyles();
         const h = document.createElement("div");
-        h.className = `${o.handleClass} extColResizeHandle ${NATIVE_SEPARATOR_CLASS}`;
+        syncHandleClass(h, nativeSeparator(header));
         h.setAttribute("role", "separator");
         h.setAttribute("aria-orientation", "horizontal");
         h.setAttribute("aria-label", o.ariaLabel);
