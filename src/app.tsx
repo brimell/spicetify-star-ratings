@@ -18,7 +18,7 @@ import {
     parseRatingPlaylistName,
 } from "./ratings";
 import { PlaylistUris, Ratings, TimestampedRating } from "./types/store";
-import { GridCoordinator } from "./grid-coordinator";
+import { GridCoordinator } from "./shared/grid-coordinator/grid-coordinator";
 import {
     getTracklistTrackUri,
     isAlbumPage,
