@@ -231,6 +231,18 @@ export function Settings({
                 settings={settings}
                 name={
                     <>
+                        Use a separate column for playlist stars
+                        <br />
+                        Give the stars their own tracklist column instead of docking them next to the duration
+                    </>
+                }
+                field="useSeparateColumn"
+                onclick={() => updateTracklist(true)}
+            />
+            <CheckboxItem
+                settings={settings}
+                name={
+                    <>
                         Show weighted shuffle toggle
                         <br />
                         Display the weighted shuffle button 'W' next to the shuffle button
